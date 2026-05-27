@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply safe data-quality fixes to lrgdm_v2.gpkg.
+"""Apply safe data-quality fixes to lrgdm.gpkg.
 
 Default mode is --dry-run (print what WOULD change). Pass --apply to commit.
 
@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm_v2.gpkg"
+GPKG = REPO / "src/data/lrgdm.gpkg"
 
 # ---- geocode_quality inference --------------------------------------------
 # Tag the place by its MOST-SPECIFIC token (the first comma-separated part).

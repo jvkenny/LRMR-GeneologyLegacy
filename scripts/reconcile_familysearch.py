@@ -2,7 +2,7 @@
 """Match GPKG People rows against a FamilySearch extract and propose fs_id values.
 
 Input:  src/data/familysearch/extract_<PROBAND>_<DATE>.json
-        src/data/lrgdm_v2.gpkg
+        src/data/lrgdm.gpkg
 Output: reports/fs_reconciliation_<DATE>.md   (human-reviewable)
         reports/fs_reconciliation_<DATE>.json (machine-applyable, includes
                                                proposed UPDATE statements)
@@ -141,7 +141,7 @@ def main() -> int:
             default="",
         ),
     )
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm_v2.gpkg")
+    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--out-dir", type=Path, default=REPO / "reports")
     ap.add_argument("--min-score", type=float, default=0.55)
     args = ap.parse_args()

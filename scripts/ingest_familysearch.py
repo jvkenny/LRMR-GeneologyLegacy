@@ -28,7 +28,7 @@ from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm_v2.gpkg"
+GPKG = REPO / "src/data/lrgdm.gpkg"
 EXTRACT_DIR = REPO / "src/data/familysearch"
 
 # Surname -> branch. Matches existing GPKG conventions (which are inconsistent

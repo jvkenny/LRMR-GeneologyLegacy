@@ -35,7 +35,7 @@ def parse_year(s: str | None) -> int | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm_v2.gpkg")
+    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--batch-size", type=int, default=5)
     args = ap.parse_args()
 

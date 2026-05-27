@@ -1,6 +1,6 @@
 # LRGDM Validation — 2026-05-26
 
-- GPKG: `src/data/lrgdm_v2.gpkg`
+- GPKG: `src/data/lrgdm.gpkg`
 - Total findings: **120**
 
 ## Summary

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Data-quality validator for lrgdm_v2.gpkg.
+"""Data-quality validator for lrgdm.gpkg.
 
 Reads the GPKG, runs a fixed set of consistency checks, and writes a
 markdown report to reports/validation_<DATE>.md.
@@ -215,7 +215,7 @@ def check_relationships(conn: sqlite3.Connection, rep: Report) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm_v2.gpkg")
+    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--out-dir", type=Path, default=REPO / "reports")
     ap.add_argument(
         "--low-quality",

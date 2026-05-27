@@ -10,7 +10,7 @@ history, stored as a GeoPackage so it can be edited in QGIS and exported as
 GeoJSON for a Leaflet viewer published via GitHub Pages.
 
 - **Repo:** https://github.com/jvkenny/lrgdm
-- **Source of truth:** `src/data/lrgdm_v2.gpkg`
+- **Source of truth:** `src/data/lrgdm.gpkg`
 - **Viewer:** `docs/index.html` (Leaflet, GH Pages)
 - **Proband:** John Kenny, FamilySearch PID **L274-KNT** (b. 1995)
 - **QGIS project:** `~/dev/bwca-trip-2026/qgis/project/LRGDM.qgz` *(lives outside
@@ -69,7 +69,7 @@ All six are rebuilt by `scripts/cleanup_model.py` from the core tables.
 | `README.md` | Top-level scripts doc. | n/a |
 
 **Convention:** any script that writes to the GPKG must default to `--dry-run`
-and require `--apply` to commit. Always `cp lrgdm_v2.gpkg lrgdm_v2.gpkg.bak`
+and require `--apply` to commit. Always `cp lrgdm.gpkg lrgdm.gpkg.bak`
 before applying.
 
 **SQLite/GPKG gotcha:** GeoPackage rtree triggers call `ST_IsEmpty()`, which
@@ -100,7 +100,7 @@ will automate this.
 
 ```sh
 python3 scripts/validate_gpkg.py                     # see findings
-cp src/data/lrgdm_v2.gpkg src/data/lrgdm_v2.gpkg.bak # always
+cp src/data/lrgdm.gpkg src/data/lrgdm.gpkg.bak # always
 python3 scripts/fix_validation.py --apply            # safe fixes
 python3 scripts/validate_gpkg.py                     # confirm reduction
 ```
@@ -202,7 +202,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.lrgdm.monthly-refres
   pipeline. Python `sqlite3` can't keep the rtree consistent.
 - Never `git push --force` to main — the GH workflow auto-exports GeoJSON
   on every push, and a force-push can desync the published viewer.
-- `src/data/lrgdm_v2.gpkg` is **Git LFS-tracked**. `git lfs status` should
+- `src/data/lrgdm.gpkg` is **Git LFS-tracked**. `git lfs status` should
   show it as managed.
 
 ## Memory / context for Claude

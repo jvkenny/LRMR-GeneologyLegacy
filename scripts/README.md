@@ -1,13 +1,13 @@
 # LRGDM Enrichment Scripts
 
-Local + scheduled-remote tooling for keeping `src/data/lrgdm_v2.gpkg` healthy and
+Local + scheduled-remote tooling for keeping `src/data/lrgdm.gpkg` healthy and
 growing. All scripts are read-only against the GPKG — any DB writes happen via a
 separate `apply_*` step after the markdown report is reviewed.
 
 ## Inputs & outputs
 
 ```
-src/data/lrgdm_v2.gpkg              ← source of truth (GeoPackage / SQLite)
+src/data/lrgdm.gpkg              ← source of truth (GeoPackage / SQLite)
 src/data/familysearch/extract_*.json ← raw FamilySearch dumps (see SKILL: lrgdm-pedigree-walk)
                 ↓
 scripts/validate_gpkg.py            → reports/validation_<DATE>.md

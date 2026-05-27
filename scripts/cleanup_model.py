@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wave 1 + schema-tightening model cleanup on lrgdm_v2.gpkg.
+"""Wave 1 + schema-tightening model cleanup on lrgdm.gpkg.
 
 Stages (in order, with --apply):
   B. Drop 4 stale tables: Birth_Points, Death_Points, Places_points,
@@ -26,7 +26,7 @@ from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm_v2.gpkg"
+GPKG = REPO / "src/data/lrgdm.gpkg"
 
 STALE_TABLES = ["Birth_Points", "Death_Points", "Places_points", "Places_without_People"]
 DERIVED_TABLES = [

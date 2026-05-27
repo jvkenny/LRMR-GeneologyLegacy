@@ -38,50 +38,50 @@ jobs:
         run: |
           ls -lah src/data
           echo "---- file info ----"
-          file src/data/lrgdm_v2.gpkg || true
+          file src/data/lrgdm.gpkg || true
           echo "---- ogrinfo ----"
-          ogrinfo -q src/data/lrgdm_v2.gpkg | sed -n '1,200p'
+          ogrinfo -q src/data/lrgdm.gpkg | sed -n '1,200p'
 
       # === Exports ===
       - name: Export People (Person_Locations)
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/people.geojson src/data/lrgdm_v2.gpkg "Person_Locations"
+            docs/data/people.geojson src/data/lrgdm.gpkg "Person_Locations"
 
       - name: Export Places
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/places.geojson src/data/lrgdm_v2.gpkg "Places"
+            docs/data/places.geojson src/data/lrgdm.gpkg "Places"
 
       - name: Export Events (Event_Points)
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/events.geojson src/data/lrgdm_v2.gpkg "Event_Points"
+            docs/data/events.geojson src/data/lrgdm.gpkg "Event_Points"
 
       - name: Export EventParticipants
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/event_participants.geojson src/data/lrgdm_v2.gpkg "EventParticipants"
+            docs/data/event_participants.geojson src/data/lrgdm.gpkg "EventParticipants"
 
       - name: Export Birth Location Points
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_location_points.geojson src/data/lrgdm_v2.gpkg "Birth_Location_Points"
+            docs/data/birth_location_points.geojson src/data/lrgdm.gpkg "birth_location_points"
 
       - name: Export Death Location Points
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/death_location_points.geojson src/data/lrgdm_v2.gpkg "Death_Location_Points"
+            docs/data/death_location_points.geojson src/data/lrgdm.gpkg "death_location_points"
 
       - name: Export Birth to Death Lines
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_to_death_lines.geojson src/data/lrgdm_v2.gpkg "Birth_to_Death_Lines"
+            docs/data/birth_to_death_lines.geojson src/data/lrgdm.gpkg "birth_to_death_lines"
 
       - name: Export Birth→Death Lines (Eras)
         run: |
           ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_to_death_lines_eras.geojson src/data/lrgdm_v2.gpkg "Birth_to_Death_Lines_Eras" || echo "Eras layer missing; skipping"
+            docs/data/birth_to_death_lines_eras.geojson src/data/lrgdm.gpkg "birth_to_death_lines_eras" || echo "Eras layer missing; skipping"
 
       - name: Commit changes
         shell: bash
