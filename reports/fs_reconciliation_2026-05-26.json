@@ -1,10 +1,10 @@
 {
   "generated": "2026-05-26",
   "extract": "src/data/familysearch/extract_L274-KNT_2026-05-26.json",
-  "gpkg": "src/data/lrgdm_v2.gpkg",
+  "gpkg": "src/data/lrgdm.gpkg",
   "min_score": 0.55,
-  "already_linked_count": 15,
-  "unlinked_count": 35,
+  "already_linked_count": 129,
+  "unlinked_count": 33,
   "results": [
     {
       "person_id": "P-0001",
@@ -12,17 +12,7 @@
       "birth_date": "1816-06-03",
       "death_date": "1893-12-13",
       "branch": "Paternal Reed",
-      "candidates": [
-        {
-          "fs_pid": "27XF-VBH",
-          "fs_name": "Bonam Reed",
-          "fs_birth_year": 1816,
-          "fs_death_year": 1893,
-          "fs_birth_place": "Wills Creek, Coshocton, Ohio, United States",
-          "score": 0.94,
-          "reason": "name sim 0.90; birth year exact (1816)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0002",
@@ -30,17 +20,7 @@
       "birth_date": "circa 1822",
       "death_date": "1911",
       "branch": "Paternal Reed",
-      "candidates": [
-        {
-          "fs_pid": "L7J3-GVG",
-          "fs_name": "Rebecca Talley",
-          "fs_birth_year": 1822,
-          "fs_death_year": 1911,
-          "fs_birth_place": "Morgan, Ohio, United States",
-          "score": 0.815,
-          "reason": "name sim 0.69; birth year exact (1822)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0003",
@@ -48,17 +28,7 @@
       "birth_date": "1841-06-26",
       "death_date": "1903-11-11",
       "branch": "Paternal Reed",
-      "candidates": [
-        {
-          "fs_pid": "L487-WDC",
-          "fs_name": "John Talley Reed",
-          "fs_birth_year": 1841,
-          "fs_death_year": 1903,
-          "fs_birth_place": "Woodsfield, Monroe, Ohio, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1841)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0004",
@@ -66,60 +36,6 @@
       "birth_date": "circa 1846",
       "death_date": "1880-12-20",
       "branch": "Paternal Reed by marriage",
-      "candidates": [
-        {
-          "fs_pid": "KJP4-9R4",
-          "fs_name": "Elizabeth Willey",
-          "fs_birth_year": 1846,
-          "fs_death_year": 1880,
-          "fs_birth_place": "Noble Township, Morgan, Ohio, United States",
-          "score": 0.84,
-          "reason": "name sim 0.73; birth year exact (1846)"
-        },
-        {
-          "fs_pid": "M3G6-T7D",
-          "fs_name": "Elizabeth Lemley",
-          "fs_birth_year": 1756,
-          "fs_death_year": 1792,
-          "fs_birth_place": "Montgomery, Pennsylvania, United States",
-          "score": 0.56,
-          "reason": "name sim 0.80; birth year mismatch (1846 vs 1756)"
-        },
-        {
-          "fs_pid": "GSQJ-M1C",
-          "fs_name": "Celestino Dini",
-          "fs_birth_year": 1845,
-          "fs_death_year": null,
-          "fs_birth_place": "Ponte Buggianese, Pistoia, Tuscany, Italy",
-          "score": 0.554,
-          "reason": "name sim 0.36; birth year \u00b11 (1846 vs 1845)"
-        }
-      ]
-    },
-    {
-      "person_id": "P-0005",
-      "primary_name": "Benjamin Reed",
-      "birth_date": "1789-12-24",
-      "death_date": "1872-05-04",
-      "branch": "Paternal Reed",
-      "candidates": [
-        {
-          "fs_pid": "GDZ6-V7D",
-          "fs_name": "Benjamin Dye",
-          "fs_birth_year": 1755,
-          "fs_death_year": 1789,
-          "fs_birth_place": "Cranbury Township, Middlesex, New Jersey, United States",
-          "score": 0.56,
-          "reason": "name sim 0.80; birth year mismatch (1789 vs 1755)"
-        }
-      ]
-    },
-    {
-      "person_id": "P-0006",
-      "primary_name": "Sarah (Dickerson) Reed",
-      "birth_date": "1794-10-11",
-      "death_date": "1858-01-24",
-      "branch": "Paternal Reed",
       "candidates": []
     },
     {
@@ -128,26 +44,7 @@
       "birth_date": "1877-11-25",
       "death_date": "1952-03-30",
       "branch": "Paternal Reed",
-      "candidates": [
-        {
-          "fs_pid": "KLGC-TLC",
-          "fs_name": "John Foulk Reed",
-          "fs_birth_year": 1877,
-          "fs_death_year": 1952,
-          "fs_birth_place": "Monteith, Guthrie, Iowa, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1877)"
-        },
-        {
-          "fs_pid": "L2XV-HRY",
-          "fs_name": "John Francis Zika",
-          "fs_birth_year": 1875,
-          "fs_death_year": 1957,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.603,
-          "reason": "name sim 0.44; birth year \u00b12 (1877 vs 1875)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0035",
@@ -163,26 +60,7 @@
       "birth_date": "1789",
       "death_date": "1868",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "L7XP-Y6P",
-          "fs_name": "David Lambert",
-          "fs_birth_year": 1790,
-          "fs_death_year": 1865,
-          "fs_birth_place": "Canaan, Somerset, Maine, United States",
-          "score": 0.94,
-          "reason": "name sim 1.00; birth year \u00b11 (1789 vs 1790)"
-        },
-        {
-          "fs_pid": "GBF4-PH4",
-          "fs_name": "MARIA UMILTA' PORCIANI",
-          "fs_birth_year": 1787,
-          "fs_death_year": 1854,
-          "fs_birth_place": "Cintolese, Monsummano Terme, Pistoia, Tuscany, Italy",
-          "score": 0.552,
-          "reason": "name sim 0.35; birth year \u00b12 (1789 vs 1787)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0010",
@@ -190,17 +68,7 @@
       "birth_date": "circa 1798",
       "death_date": "1865",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "LDFM-SM7",
-          "fs_name": "Permelia Barnard",
-          "fs_birth_year": 1798,
-          "fs_death_year": 1865,
-          "fs_birth_place": "Rome, Oneida, New York, United States",
-          "score": 0.775,
-          "reason": "name sim 0.62; birth year exact (1798)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0011",
@@ -208,17 +76,7 @@
       "birth_date": "1831-01-09",
       "death_date": "1927-04-28",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "2WFL-ZVT",
-          "fs_name": "Abiram Stacy Lambert",
-          "fs_birth_year": 1831,
-          "fs_death_year": 1927,
-          "fs_birth_place": "Salem, Washington Township, Washington, Indiana, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1831)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0012",
@@ -226,17 +84,7 @@
       "birth_date": "circa 1849",
       "death_date": "1938",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "29WD-T9P",
-          "fs_name": "Helen Amelia Boles",
-          "fs_birth_year": 1849,
-          "fs_death_year": 1939,
-          "fs_birth_place": "Hillsdale, Michigan, United States",
-          "score": 0.874,
-          "reason": "name sim 0.79; birth year exact (1849)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0013",
@@ -244,17 +92,7 @@
       "birth_date": "1818",
       "death_date": "1900",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "KN1Q-9L5",
-          "fs_name": "Silas A. Boles",
-          "fs_birth_year": 1819,
-          "fs_death_year": 1900,
-          "fs_birth_place": "Saratoga, New York, United States",
-          "score": 0.894,
-          "reason": "name sim 0.92; birth year \u00b11 (1818 vs 1819)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0014",
@@ -262,35 +100,7 @@
       "birth_date": "1823",
       "death_date": "1895",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "KN1Q-GH1",
-          "fs_name": "Martha Lovina Spears",
-          "fs_birth_year": 1823,
-          "fs_death_year": 1895,
-          "fs_birth_place": "Trumbull, Ohio, United States",
-          "score": 0.788,
-          "reason": "name sim 0.65; birth year exact (1823)"
-        },
-        {
-          "fs_pid": "L7J3-GVG",
-          "fs_name": "Rebecca Talley",
-          "fs_birth_year": 1822,
-          "fs_death_year": 1911,
-          "fs_birth_place": "Morgan, Ohio, United States",
-          "score": 0.597,
-          "reason": "name sim 0.43; birth year \u00b11 (1823 vs 1822)"
-        },
-        {
-          "fs_pid": "KN1Q-9L5",
-          "fs_name": "Silas A. Boles",
-          "fs_birth_year": 1819,
-          "fs_death_year": 1900,
-          "fs_birth_place": "Saratoga, New York, United States",
-          "score": 0.596,
-          "reason": "name sim 0.59; birth year \u00b14 (1823 vs 1819)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0015",
@@ -298,26 +108,7 @@
       "birth_date": "1728",
       "death_date": "1790",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "L7NQ-CKX",
-          "fs_name": "Sherebiah Lambert Sr.",
-          "fs_birth_year": 1728,
-          "fs_death_year": 1833,
-          "fs_birth_place": "York, York, Maine, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1728)"
-        },
-        {
-          "fs_pid": "LDF8-39B",
-          "fs_name": "Sherebiah Lambert Jr",
-          "fs_birth_year": 1759,
-          "fs_death_year": 1833,
-          "fs_birth_place": "Wiscasset, Wiscasset, Lincoln, Massachusetts, United States",
-          "score": 0.65,
-          "reason": "name sim 0.95; birth year mismatch (1728 vs 1759)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0016",
@@ -325,26 +116,7 @@
       "birth_date": "1738",
       "death_date": "1806",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "KN1W-474",
-          "fs_name": "Marie Angelique Delage",
-          "fs_birth_year": 1738,
-          "fs_death_year": 1810,
-          "fs_birth_place": "\u00cele d'Orl\u00e9ans, Montmorency No. 2, Quebec, Canada",
-          "score": 0.627,
-          "reason": "name sim 0.38; birth year exact (1738)"
-        },
-        {
-          "fs_pid": "G8SF-YZH",
-          "fs_name": "Lydia Hopkins",
-          "fs_birth_year": 1737,
-          "fs_death_year": 1826,
-          "fs_birth_place": "Billerica, Middlesex, Massachusetts, United States",
-          "score": 0.597,
-          "reason": "name sim 0.43; birth year \u00b11 (1738 vs 1737)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0017",
@@ -352,35 +124,7 @@
       "birth_date": "1759",
       "death_date": "1833",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "LDF8-39B",
-          "fs_name": "Sherebiah Lambert Jr",
-          "fs_birth_year": 1759,
-          "fs_death_year": 1833,
-          "fs_birth_place": "Wiscasset, Wiscasset, Lincoln, Massachusetts, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1759)"
-        },
-        {
-          "fs_pid": "L7NQ-CKX",
-          "fs_name": "Sherebiah Lambert Sr.",
-          "fs_birth_year": 1728,
-          "fs_death_year": 1833,
-          "fs_birth_place": "York, York, Maine, United States",
-          "score": 0.65,
-          "reason": "name sim 0.95; birth year mismatch (1759 vs 1728)"
-        },
-        {
-          "fs_pid": "L8J2-MLN",
-          "fs_name": "Sarah Brown",
-          "fs_birth_year": 1758,
-          "fs_death_year": 1794,
-          "fs_birth_place": "Frederick, Maryland, British Colonial America",
-          "score": 0.611,
-          "reason": "name sim 0.45; birth year \u00b11 (1759 vs 1758)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0018",
@@ -388,35 +132,7 @@
       "birth_date": "1788",
       "death_date": "1845",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "GBF4-PH4",
-          "fs_name": "MARIA UMILTA' PORCIANI",
-          "fs_birth_year": 1787,
-          "fs_death_year": 1854,
-          "fs_birth_place": "Cintolese, Monsummano Terme, Pistoia, Tuscany, Italy",
-          "score": 0.614,
-          "reason": "name sim 0.46; birth year \u00b11 (1788 vs 1787)"
-        },
-        {
-          "fs_pid": "LZNM-W98",
-          "fs_name": "Permelia \"Millie\" Oaks",
-          "fs_birth_year": 1768,
-          "fs_death_year": 1845,
-          "fs_birth_place": "Harvard, Worcester, Massachusetts Bay Colony, British Colonial America",
-          "score": 0.574,
-          "reason": "name sim 0.82; birth year mismatch (1788 vs 1768)"
-        },
-        {
-          "fs_pid": "GWCY-7JL",
-          "fs_name": "Franti\u0161ek \u0158\u00edha",
-          "fs_birth_year": 1788,
-          "fs_death_year": 1848,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.571,
-          "reason": "name sim 0.29; birth year exact (1788)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0036",
@@ -424,17 +140,7 @@
       "birth_date": "1882-10-30",
       "death_date": "1946-05-20",
       "branch": "Maternal Lambert",
-      "candidates": [
-        {
-          "fs_pid": "LMWG-K6F",
-          "fs_name": "Estella Gertrude Lambert",
-          "fs_birth_year": 1882,
-          "fs_death_year": 1946,
-          "fs_birth_place": "Seely Township, Guthrie, Iowa, United States",
-          "score": 0.975,
-          "reason": "name sim 0.96; birth year exact (1882)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0019",
@@ -442,26 +148,7 @@
       "birth_date": "1859-06-13",
       "death_date": "1948",
       "branch": "Zika",
-      "candidates": [
-        {
-          "fs_pid": "LKTC-D4S",
-          "fs_name": "Anton Zika",
-          "fs_birth_year": 1848,
-          "fs_death_year": 1924,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.68,
-          "reason": "name sim 1.00; birth year mismatch (1859 vs 1848)"
-        },
-        {
-          "fs_pid": "GPDL-R79",
-          "fs_name": "Anton\u00edn Zeman",
-          "fs_birth_year": null,
-          "fs_death_year": null,
-          "fs_birth_place": null,
-          "score": 0.617,
-          "reason": "name sim 0.70"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0020",
@@ -469,17 +156,7 @@
       "birth_date": "1853",
       "death_date": "1930",
       "branch": "Zika",
-      "candidates": [
-        {
-          "fs_pid": "LBH1-TK2",
-          "fs_name": "Josephine Riha Veta",
-          "fs_birth_year": 1854,
-          "fs_death_year": 1964,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.656,
-          "reason": "name sim 0.53; birth year \u00b11 (1853 vs 1854)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0021",
@@ -487,26 +164,7 @@
       "birth_date": "1875-10-10",
       "death_date": "1957-06-09",
       "branch": "Zika",
-      "candidates": [
-        {
-          "fs_pid": "L2XV-HRY",
-          "fs_name": "John Francis Zika",
-          "fs_birth_year": 1875,
-          "fs_death_year": 1957,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.871,
-          "reason": "name sim 0.79; birth year exact (1875)"
-        },
-        {
-          "fs_pid": "KLGC-TLC",
-          "fs_name": "John Foulk Reed",
-          "fs_birth_year": 1877,
-          "fs_death_year": 1952,
-          "fs_birth_place": "Monteith, Guthrie, Iowa, United States",
-          "score": 0.663,
-          "reason": "name sim 0.54; birth year \u00b12 (1875 vs 1877)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0022",
@@ -514,26 +172,7 @@
       "birth_date": "1878-04-14",
       "death_date": "1964-08-01",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "LBHY-3B5",
-          "fs_name": "Beatrice Delina Pouliot",
-          "fs_birth_year": 1878,
-          "fs_death_year": 1964,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 0.707,
-          "reason": "name sim 0.51; birth year exact (1878)"
-        },
-        {
-          "fs_pid": "PWP7-JQ8",
-          "fs_name": "Quintilia Lenzi",
-          "fs_birth_year": 1876,
-          "fs_death_year": 1960,
-          "fs_birth_place": "Italy",
-          "score": 0.58,
-          "reason": "name sim 0.40; birth year \u00b12 (1878 vs 1876)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0023",
@@ -541,17 +180,7 @@
       "birth_date": "1834-03-24",
       "death_date": "1903-05-10",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "96JW-KX5",
-          "fs_name": "Paul Pouliot",
-          "fs_birth_year": 1834,
-          "fs_death_year": 1903,
-          "fs_birth_place": "Saint-Laurent, L'\u00cele-d'Orl\u00e9ans, Quebec, Canada",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1834)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0024",
@@ -559,26 +188,7 @@
       "birth_date": "1840-03-01",
       "death_date": "1890",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "MGNK-YL2",
-          "fs_name": "Henriette St. Louis",
-          "fs_birth_year": 1840,
-          "fs_death_year": 1890,
-          "fs_birth_place": "New York, United States",
-          "score": 0.846,
-          "reason": "name sim 0.74; birth year exact (1840)"
-        },
-        {
-          "fs_pid": "GYVW-44Y",
-          "fs_name": "Henriette Cheffre",
-          "fs_birth_year": null,
-          "fs_death_year": null,
-          "fs_birth_place": null,
-          "score": 0.553,
-          "reason": "name sim 0.59"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0025",
@@ -586,26 +196,7 @@
       "birth_date": "1805-05-20",
       "death_date": "1858-06-13",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "KCTF-J6N",
-          "fs_name": "Francois Pouliot",
-          "fs_birth_year": 1805,
-          "fs_death_year": 1858,
-          "fs_birth_place": "Saint-Laurent, L'\u00cele-d'Orl\u00e9ans, Quebec, Canada",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1805)"
-        },
-        {
-          "fs_pid": "GWCT-J3K",
-          "fs_name": "Franti\u0161ek Z\u00edka",
-          "fs_birth_year": 1801,
-          "fs_death_year": 1872,
-          "fs_birth_place": "Beneschau, Bohemia, Austria",
-          "score": 0.56,
-          "reason": "name sim 0.53; birth year \u00b14 (1805 vs 1801)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0026",
@@ -613,17 +204,7 @@
       "birth_date": "1812-03-01",
       "death_date": "1894-04-03",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "96JW-KFH",
-          "fs_name": "Julie Audet dit Lapointe",
-          "fs_birth_year": 1812,
-          "fs_death_year": 1894,
-          "fs_birth_place": "Saint-Jean-Baptiste, Montmorency No. 2, Quebec, Canada",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1812)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0027",
@@ -631,17 +212,7 @@
       "birth_date": "circa 1820",
       "death_date": "NULL",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "GYV7-TRD",
-          "fs_name": "Joseph Filiatrault dit St. Louis",
-          "fs_birth_year": null,
-          "fs_death_year": null,
-          "fs_birth_place": null,
-          "score": 0.8,
-          "reason": "name sim 1.00"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0028",
@@ -649,17 +220,7 @@
       "birth_date": "circa 1821",
       "death_date": "NULL",
       "branch": "Pouliot",
-      "candidates": [
-        {
-          "fs_pid": "GYVW-44Y",
-          "fs_name": "Henriette Cheffre",
-          "fs_birth_year": null,
-          "fs_death_year": null,
-          "fs_birth_place": null,
-          "score": 0.579,
-          "reason": "name sim 0.63"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0029",
@@ -667,17 +228,7 @@
       "birth_date": "1899-07-19",
       "death_date": "1974-04-11",
       "branch": "Reed-Zika",
-      "candidates": [
-        {
-          "fs_pid": "M3P5-XF6",
-          "fs_name": "Earl Wayne Reed Sr",
-          "fs_birth_year": 1899,
-          "fs_death_year": 1974,
-          "fs_birth_place": "Guthrie, Iowa, United States",
-          "score": 0.945,
-          "reason": "name sim 0.91; birth year exact (1899)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0030",
@@ -685,17 +236,7 @@
       "birth_date": "1913",
       "death_date": "2006",
       "branch": "Reed-Zika",
-      "candidates": [
-        {
-          "fs_pid": "LY94-DBH",
-          "fs_name": "Isabelle Harriet Zika",
-          "fs_birth_year": 1913,
-          "fs_death_year": 2006,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 0.788,
-          "reason": "name sim 0.65; birth year exact (1913)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0031",
@@ -703,17 +244,7 @@
       "birth_date": "1930",
       "death_date": "2024",
       "branch": "Reed-Zika",
-      "candidates": [
-        {
-          "fs_pid": "M3P5-XF6",
-          "fs_name": "Earl Wayne Reed Sr",
-          "fs_birth_year": 1899,
-          "fs_death_year": 1974,
-          "fs_birth_place": "Guthrie, Iowa, United States",
-          "score": 0.647,
-          "reason": "name sim 0.94; birth year mismatch (1930 vs 1899)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0032",
@@ -721,26 +252,7 @@
       "birth_date": "1934-07-18",
       "death_date": "1995-05-02",
       "branch": "Reed-Zika",
-      "candidates": [
-        {
-          "fs_pid": "LY94-373",
-          "fs_name": "John Ronald Reed Sr",
-          "fs_birth_year": 1934,
-          "fs_death_year": 1995,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 0.84,
-          "reason": "name sim 0.73; birth year exact (1934)"
-        },
-        {
-          "fs_pid": "L274-KT7",
-          "fs_name": "Leah Rae Mariotti",
-          "fs_birth_year": 1936,
-          "fs_death_year": 2025,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 0.554,
-          "reason": "name sim 0.36; birth year \u00b12 (1934 vs 1936)"
-        }
-      ]
+      "candidates": []
     },
     {
       "person_id": "P-0033",
@@ -755,27 +267,8 @@
       "primary_name": "Leah Rae Mariotti",
       "birth_date": "1936-09-08",
       "death_date": "2025-07-21",
-      "branch": "NULL",
-      "candidates": [
-        {
-          "fs_pid": "L274-KT7",
-          "fs_name": "Leah Rae Mariotti",
-          "fs_birth_year": 1936,
-          "fs_death_year": 2025,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 1.0,
-          "reason": "name sim 1.00; birth year exact (1936)"
-        },
-        {
-          "fs_pid": "LY94-373",
-          "fs_name": "John Ronald Reed Sr",
-          "fs_birth_year": 1934,
-          "fs_death_year": 1995,
-          "fs_birth_place": "Chicago, Cook, Illinois, United States",
-          "score": 0.573,
-          "reason": "name sim 0.39; birth year \u00b12 (1936 vs 1934)"
-        }
-      ]
+      "branch": "Maternal Reed",
+      "candidates": []
     }
   ]
 }
