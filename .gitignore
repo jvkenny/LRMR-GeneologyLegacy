@@ -8,4 +8,4 @@
 .vscode/
 .idea/
 *.gpkg.bak
-*.gpkg.stage-*.bak
+*.gpkg.*.bak
