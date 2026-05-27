@@ -7,3 +7,5 @@
 .DS_Store
 .vscode/
 .idea/
+*.gpkg.bak
+*.gpkg.stage-*.bak
