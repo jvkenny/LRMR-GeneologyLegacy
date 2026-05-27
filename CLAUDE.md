@@ -119,50 +119,79 @@ pick them up if it's open.
 
 ## Scheduled automation
 
-A weekly remote routine
-([trig_01Ad4ZrnyND8NWYg89LrjDRb](https://claude.ai/code/routines/trig_01Ad4ZrnyND8NWYg89LrjDRb))
-runs every **Tuesday 21:00 America/Chicago** and:
+Two complementary scheduled tasks:
+
+**Weekly remote routine** ([trig_01Ad4ZrnyND8NWYg89LrjDRb](https://claude.ai/code/routines/trig_01Ad4ZrnyND8NWYg89LrjDRb))
+fires every **Tuesday 21:00 America/Chicago** in Anthropic's cloud and:
 1. Runs the validator (commits `reports/validation_<DATE>.md`).
 2. Picks 5 ancestors via `next_mining_batch.py`, web-searches each for obit /
    news / census mentions.
 3. Writes `reports/web_mentions/<person_id>.md`.
 4. Opens a PR titled `Weekly enrichment <DATE>`.
 
-The routine runs in Anthropic's cloud — it has no access to the local Chrome
-session, so the FamilySearch scrape stays manual (run the skill locally
-whenever you want to refresh the tree).
+This routine runs in the cloud — it has no access to the local Chrome
+session, so the FamilySearch scrape stays manual.
 
-## Current state (May 2026 cleanup snapshot)
+**Monthly local reminder** (launchd job
+`~/Library/LaunchAgents/com.lrgdm.monthly-refresh-reminder.plist`) fires on
+the **1st of every month at 09:00 America/Chicago** and posts an ntfy push to
+the `lrgdm` topic on the hurricane Pi (http://100.126.34.16:8091/lrgdm). The
+notification reminds John to:
+1. Open Chrome, confirm logged into FamilySearch.
+2. Ask Claude to run the `lrgdm-pedigree-walk` skill.
+3. Follow with `lrgdm-ingest-fs` to merge any new ancestors.
 
-- People: 48 (after merging 2 duplicates from 50)
-- Places: 101 (after collapsing 37 duplicate rows from 138)
+The local job is just a reminder — actually invoking the skill requires John
+to be in a Claude Code session, since the scrape and ingest are interactive.
+
+Stop/restart the local job:
+```sh
+launchctl bootout  gui/$(id -u) ~/Library/LaunchAgents/com.lrgdm.monthly-refresh-reminder.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.lrgdm.monthly-refresh-reminder.plist
+```
+
+## Current state (May 2026 cleanup + ingest snapshot)
+
+- People: **162** (48 from before, +114 ingested from FS extract on 2026-05-26)
+- Places: **187** (101 + 86 new from ingest)
 - Events: 191
 - EventParticipants: 141
 - Relationships: 36
 - FS extract on disk: 132 ancestors of L274-KNT (8 generations)
-- People with `fs_id` set: 17 (and rising — 32 more have proposals waiting in
-  the May 2026 reconciliation report)
-- Last validator run: 55 findings remaining
-  - 11 orphan Places (likely future-ingest candidates from the FS extract)
+- People with `fs_id` set: **129** out of the 132 FS pids
+- Last validator run: **120 findings**
+  - 56 People with `branch=NULL` (surname heuristic gaps — see
+    `reports/ingest_proposal_<DATE>.md` for the list, bulk-assign manually)
+  - 9 duplicate (name, birth year) pairs — FS persons that match existing
+    GPKG rows which didn't yet have `fs_id` set. Resolve by extending
+    `MERGES` in `scripts/merge_duplicate_persons.py` and running.
+  - 11 orphan Places (down from 10 — most pre-ingest orphans now have owners)
   - 44 Events with `place_id` nulled out (broken FKs we honestly cleaned —
     each one has its original `PL-####` recorded in `Events.notes`)
 
 ## What's next
 
-1. **Ingest the missing ~84 ancestors from FS.** The FS extract has 132
-   ancestors; GPKG has 48. The gap maps cleanly via fs_id. Branch assignment
-   needs care (paternal vs maternal Reed lineage based on FS couples graph).
-   See task #12 in John's working notes. Lives behind a future
-   `scripts/ingest_familysearch.py`.
-2. **Apply the reconciliation matches.** 32 of the 35 unlinked People rows
-   have at least one high-confidence FS match proposal in
-   `reports/fs_reconciliation_2026-05-26.md`. Build the apply script and run.
-3. **Resolve the 44 nulled Events.** Each one has its original broken `PL-####`
-   in `Events.notes`. Some are real places that were lost in a past dedup;
-   some are events that no longer have a useful location. Manual review.
-4. **Photo overlay in the viewer.** FS extract gives `portraitUrl` per
+1. **Assign branches to the 56 NULL-branch ancestors.** Open
+   `reports/ingest_proposal_<DATE>.md`, look at the "People needing branch
+   assignment" section. Most are Czech (Říha, Zíka, Zemanová, etc. — likely
+   Kroll paternal-grandmother lineage extending into Bohemia) or
+   French-Canadian (Tremblay, Audet, Lapointe — probably Pouliot). Bulk-update
+   via SQL or extend `SURNAME_BRANCH_MAP` in `scripts/ingest_familysearch.py`
+   and re-run the ingest on a fresh extract.
+2. **Merge the 9 new person dupes.** The ingest collided with existing GPKG
+   rows that didn't have `fs_id`. Extend `MERGES` in
+   `scripts/merge_duplicate_persons.py` with the new pairs. The fs-linked row
+   should be the winner (consistent with prior dedup).
+3. **Apply the reconciliation matches.** Open
+   `reports/fs_reconciliation_<DATE>.md` and apply the high-confidence
+   matches BEFORE the next FS ingest — otherwise we'll keep creating dupes
+   on each ingest pass.
+4. **Resolve the 44 nulled Events.** Each one has its original broken
+   `PL-####` in `Events.notes`. Some are real places that were lost in a past
+   dedup; some are events that no longer have a useful location. Manual.
+5. **Photo overlay in the viewer.** FS extract gives `portraitUrl` per
    person; thread it into `docs/index.html` popups.
-5. **Time-slicing view.** Parameterized year filter on the derived layers
+6. **Time-slicing view.** Parameterized year filter on the derived layers
    ("who was alive where in 1860?"). Pure SQL once the data is clean.
 
 ## Key invariants — do not break
