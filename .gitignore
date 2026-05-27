@@ -1,0 +1,9 @@
+# SQLite/GeoPackage transient sidecars (rollback journal, write-ahead log, shared memory)
+*.gpkg-journal
+*.gpkg-wal
+*.gpkg-shm
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
