@@ -734,7 +734,10 @@
       stroke-dashoffset: var(--len, 2000);
       animation: draw-line 1.2s ease-out forwards;
     }
-    .feature-dim { opacity: .12 !important; }
+    /* "Not alive in selected year" — kept on the map as ghostly context so
+       the family's full historical footprint is still felt, but faint
+       enough to read as off. */
+    .feature-dim { opacity: .05 !important; }
     .feature-hidden { opacity: 0 !important; pointer-events: none; }
 
     /* Spinner overlay shown until first geojson loads */
