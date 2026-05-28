@@ -2,13 +2,25 @@
 """Merge known duplicate People rows.
 
 Each merge: keep the row with `fs_id` set (FamilySearch is the canonical
-identity), copy missing fields (notes, source_summary) from the loser into
-the winner, repoint all FKs (Events.PID_People, EventParticipants.person_id,
-Relationships.person_id_a, person_id_b) to the winner, then delete the loser.
+identity), but **prefer curated content from the loser** when the winner only
+has FS-import boilerplate. Repoint all FKs (Events.PID_People,
+EventParticipants.person_id, Relationships.person_id_a, person_id_b) to the
+winner, then delete the loser.
 
-Merges:
-  P-0005 (Benjamin Reed)     -> P-0040 (LZDK-YP8)
-  P-0006 (Sarah Dickerson)   -> P-0041 (991N-J11)
+Field preference rules per column:
+  notes / source_summary
+    - If winner's value is empty → use loser's
+    - If winner's value starts with the FS-import boilerplate
+      ("Imported from FamilySearch") and loser's value is set → use loser's
+    - Otherwise keep winner's
+  birth_date / death_date
+    - If winner's value isn't ISO (e.g. "14 April 1878") and loser's is ISO
+      ("1878-04-14") → use loser's
+    - Otherwise keep winner's
+  birth_place_id / death_place_id
+    - If winner's value is NULL or points to a Places row that no longer
+      exists, use loser's
+    - Otherwise keep winner's (they may both be valid; QGIS edits later)
 
 Use --dry-run (default) to plan, --apply to commit.
 """
@@ -25,7 +37,66 @@ GPKG = REPO / "src/data/lrgdm.gpkg"
 MERGES = [
     {"loser": "P-0005", "winner": "P-0040", "label": "Benjamin Reed"},
     {"loser": "P-0006", "winner": "P-0041", "label": "Sarah Dickerson"},
+    # 14 dupes surfaced 2026-05-27: each is an original GPKG row (no fs_id)
+    # colliding with the same person ingested fresh from the FS extract on
+    # 2026-05-26. Winners are the fs-linked rows per the canonical-identity rule.
+    {"loser": "P-0003", "winner": "P-0070", "label": "John Talley Reed"},
+    {"loser": "P-0011", "winner": "P-0072", "label": "Abiram Stacy Lambert"},
+    {"loser": "P-0014", "winner": "P-0092", "label": "Martha L. (Spear) Boles"},
+    {"loser": "P-0015", "winner": "P-0138", "label": "Sherebiah Lambert Sr."},
+    {"loser": "P-0017", "winner": "P-0105", "label": "Sherebiah Lambert Jr."},
+    {"loser": "P-0021", "winner": "P-0064", "label": "John F. Zika"},
+    {"loser": "P-0023", "winner": "P-0078", "label": "Paul Pouliot"},
+    {"loser": "P-0024", "winner": "P-0076", "label": "Henriette Pouliot"},
+    {"loser": "P-0026", "winner": "P-0094", "label": "Julie Audet dit Lapointe"},
+    {"loser": "P-0029", "winner": "P-0062", "label": "Earl Wayne Reed"},
+    {"loser": "P-0030", "winner": "P-0058", "label": "Isabelle (Zika) Reed"},
+    {"loser": "P-0032", "winner": "P-0056", "label": "John R. Reed"},
+    {"loser": "P-0034", "winner": "P-0061", "label": "John Foulk Reed"},
+    {"loser": "P-0037", "winner": "P-0055", "label": "Leah Rae Mariotti"},
+    # PL-0016 and PL-0158 are both Chicago variants (verified 2026-05-27),
+    # so this merge is safe.
+    {"loser": "P-0022", "winner": "P-0068", "label": "Beatrice Delina Pouliot"},
 ]
+
+
+FS_BOILERPLATE = "Imported from FamilySearch"
+ISO_DATE = __import__("re").compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _prefer_curated(winner_v, loser_v):
+    """Return the better of two notes/source values.
+    Prefers a non-empty curated value over FS-import boilerplate."""
+    w = (winner_v or "").strip()
+    l = (loser_v or "").strip()
+    if not w:
+        return l or None
+    if w.startswith(FS_BOILERPLATE) and l and not l.startswith(FS_BOILERPLATE):
+        return l
+    return w
+
+
+def _prefer_iso_date(winner_v, loser_v):
+    """Return the better date value, preferring ISO over free-text."""
+    w = (winner_v or "").strip()
+    l = (loser_v or "").strip()
+    if not w:
+        return l or None
+    if not ISO_DATE.match(w) and l and ISO_DATE.match(l):
+        return l
+    return w
+
+
+def _prefer_resolvable_place(cur, winner_v, loser_v):
+    """Return the better place_id, preferring one that resolves in Places."""
+    if not winner_v:
+        return loser_v
+    n = cur.execute("SELECT COUNT(*) FROM Places WHERE place_id=?", (winner_v,)).fetchone()[0]
+    if n == 0 and loser_v:
+        nl = cur.execute("SELECT COUNT(*) FROM Places WHERE place_id=?", (loser_v,)).fetchone()[0]
+        if nl > 0:
+            return loser_v
+    return winner_v
 
 
 def _capture_and_drop_triggers(cur, tables):
@@ -56,62 +127,82 @@ def main() -> int:
     conn = sqlite3.connect(GPKG)
     cur = conn.cursor()
 
+    plans = []  # cache merged values to reuse during --apply
     for m in MERGES:
         loser, winner = m["loser"], m["winner"]
         l = cur.execute(
-            "SELECT person_id, primary_name, notes, source_summary, birth_place_id, death_place_id "
+            "SELECT person_id, primary_name, notes, source_summary, birth_date, death_date, "
+            "       birth_place_id, death_place_id "
             "FROM People WHERE person_id=?",
             (loser,),
         ).fetchone()
         w = cur.execute(
-            "SELECT person_id, primary_name, notes, source_summary, birth_place_id, death_place_id, fs_id "
+            "SELECT person_id, primary_name, notes, source_summary, birth_date, death_date, "
+            "       birth_place_id, death_place_id, fs_id "
             "FROM People WHERE person_id=?",
             (winner,),
         ).fetchone()
         if not l or not w:
             print(f"  skip {m['label']}: loser or winner missing", file=sys.stderr)
+            plans.append(None)
             continue
-        print(f"\n== Merge: {m['label']} ==")
-        print(f"  loser  {l[0]}: notes={l[2]!r} source={l[3]!r} birth_pl={l[4]} death_pl={l[5]}")
-        print(f"  winner {w[0]}: notes={w[2]!r} source={w[3]!r} birth_pl={w[4]} death_pl={w[5]} fs_id={w[6]}")
-        # Plan: merge notes/source if winner is blank
-        merged_notes = w[2] or l[2]
-        merged_source = w[3] or l[3]
+        merged = {
+            "notes":           _prefer_curated(w[2], l[2]),
+            "source_summary":  _prefer_curated(w[3], l[3]),
+            "birth_date":      _prefer_iso_date(w[4], l[4]),
+            "death_date":      _prefer_iso_date(w[5], l[5]),
+            "birth_place_id":  _prefer_resolvable_place(cur, w[6], l[6]),
+            "death_place_id":  _prefer_resolvable_place(cur, w[7], l[7]),
+        }
         ev_refs = cur.execute("SELECT COUNT(*) FROM Events WHERE PID_People=?", (loser,)).fetchone()[0]
         ep_refs = cur.execute("SELECT COUNT(*) FROM EventParticipants WHERE person_id=?", (loser,)).fetchone()[0]
         rel_refs = cur.execute(
             "SELECT COUNT(*) FROM Relationships WHERE person_id_a=? OR person_id_b=?", (loser, loser),
         ).fetchone()[0]
-        print(f"  will repoint: Events.PID_People={ev_refs}, EventParticipants={ep_refs}, Relationships={rel_refs}")
-        print(f"  will set winner.notes={merged_notes!r}")
-        print(f"  will set winner.source_summary={merged_source!r}")
+        print(f"\n== Merge: {m['label']} ==")
+        print(f"  loser  {l[0]}: notes={l[2]!r}")
+        print(f"               source={l[3]!r} birth_date={l[4]!r} birth_pl={l[6]}")
+        print(f"  winner {w[0]} (fs_id={w[8]!r})")
+        print(f"               notes={w[2]!r}")
+        print(f"               source={w[3]!r} birth_date={w[4]!r} birth_pl={w[6]}")
+        print(f"  → repoint: Events={ev_refs}, EventParticipants={ep_refs}, Relationships={rel_refs}")
+        print(f"  → set winner.notes={merged['notes']!r}")
+        print(f"  → set winner.source_summary={merged['source_summary']!r}")
+        if merged['birth_date'] != w[4]:
+            print(f"  → set winner.birth_date={merged['birth_date']!r}")
+        if merged['death_date'] != w[5]:
+            print(f"  → set winner.death_date={merged['death_date']!r}")
+        if merged['birth_place_id'] != w[6]:
+            print(f"  → set winner.birth_place_id={merged['birth_place_id']!r}")
+        if merged['death_place_id'] != w[7]:
+            print(f"  → set winner.death_place_id={merged['death_place_id']!r}")
+        plans.append(merged)
 
     if not args.apply:
         print("\n(dry-run) pass --apply to commit.")
         return 0
 
     saved = _capture_and_drop_triggers(cur, ["People", "Events"])
-    for m in MERGES:
-        loser, winner = m["loser"], m["winner"]
-        l = cur.execute(
-            "SELECT notes, source_summary FROM People WHERE person_id=?", (loser,),
-        ).fetchone()
-        if not l:
+    for m, merged in zip(MERGES, plans):
+        if merged is None:
             continue
-        # Backfill winner fields if blank
+        loser, winner = m["loser"], m["winner"]
         cur.execute(
             "UPDATE People SET "
-            "  notes = COALESCE(NULLIF(TRIM(COALESCE(notes,'')),''), ?), "
-            "  source_summary = COALESCE(NULLIF(TRIM(COALESCE(source_summary,'')),''), ?) "
+            "  notes = ?, source_summary = ?, birth_date = ?, death_date = ?, "
+            "  birth_place_id = ?, death_place_id = ? "
             "WHERE person_id = ?",
-            (l[0], l[1], winner),
+            (
+                merged["notes"], merged["source_summary"],
+                merged["birth_date"], merged["death_date"],
+                merged["birth_place_id"], merged["death_place_id"],
+                winner,
+            ),
         )
-        # Repoint FKs
         cur.execute("UPDATE Events SET PID_People=? WHERE PID_People=?", (winner, loser))
         cur.execute("UPDATE EventParticipants SET person_id=? WHERE person_id=?", (winner, loser))
         cur.execute("UPDATE Relationships SET person_id_a=? WHERE person_id_a=?", (winner, loser))
         cur.execute("UPDATE Relationships SET person_id_b=? WHERE person_id_b=?", (winner, loser))
-        # Delete loser
         cur.execute("DELETE FROM People WHERE person_id=?", (loser,))
     _recreate(cur, saved)
 

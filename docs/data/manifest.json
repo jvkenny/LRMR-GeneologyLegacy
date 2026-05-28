@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-05-28T00:43:39+00:00",
+  "proband_fs_id": "L274-KNT",
+  "year_min": 1710,
+  "year_max": 2025,
+  "eras": [
+    "Civil War & Reconstruction",
+    "Colonial Era",
+    "Early Republic",
+    "Gilded Age",
+    "Modern",
+    "Progressive Era & WWI",
+    "Roaring 20s & Great Depression"
+  ],
+  "branches": [
+    "Paternal Reed",
+    "Maternal Mariotti",
+    "Maternal Lambert",
+    "Zika",
+    "Pouliot",
+    "Reed-Zika",
+    "Paternal Kroll",
+    "Paternal Reed by marriage",
+    "Paternal Kenny"
+  ],
+  "person_count": 147,
+  "place_count": 187,
+  "event_count": 191
+}

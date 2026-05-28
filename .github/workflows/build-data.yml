@@ -26,62 +26,14 @@ jobs:
           git lfs fetch origin ${{ github.ref_name }}
           git lfs checkout
 
-      - name: Install GDAL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gdal-bin
-
-      - name: Prepare folders
-        run: mkdir -p docs/data
-
-      - name: Sanity check data file and list layers
+      - name: Sanity check data file
         run: |
           ls -lah src/data
-          echo "---- file info ----"
           file src/data/lrgdm.gpkg || true
-          echo "---- ogrinfo ----"
-          ogrinfo -q src/data/lrgdm.gpkg | sed -n '1,200p'
 
-      # === Exports ===
-      - name: Export People (Person_Locations)
+      - name: Export enriched GeoJSON + manifest
         run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/people.geojson src/data/lrgdm.gpkg "Person_Locations"
-
-      - name: Export Places
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/places.geojson src/data/lrgdm.gpkg "Places"
-
-      - name: Export Events (Event_Points)
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/events.geojson src/data/lrgdm.gpkg "Event_Points"
-
-      - name: Export EventParticipants
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/event_participants.geojson src/data/lrgdm.gpkg "EventParticipants"
-
-      - name: Export Birth Location Points
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_location_points.geojson src/data/lrgdm.gpkg "birth_location_points"
-
-      - name: Export Death Location Points
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/death_location_points.geojson src/data/lrgdm.gpkg "death_location_points"
-
-      - name: Export Birth to Death Lines
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_to_death_lines.geojson src/data/lrgdm.gpkg "birth_to_death_lines"
-
-      - name: Export Birth→Death Lines (Eras)
-        run: |
-          ogr2ogr -f GeoJSON -t_srs EPSG:4326 \
-            docs/data/birth_to_death_lines_eras.geojson src/data/lrgdm.gpkg "birth_to_death_lines_eras" || echo "Eras layer missing; skipping"
+          python3 scripts/export_geojson.py
 
       - name: Commit changes
         shell: bash
@@ -96,4 +48,3 @@ jobs:
           else
             echo "No changes to commit"
           fi
-

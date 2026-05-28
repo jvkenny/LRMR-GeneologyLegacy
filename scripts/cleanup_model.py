@@ -39,6 +39,42 @@ DERIVED_TABLES = [
 ]
 
 
+def _year_sql(col: str) -> str:
+    """SQL CASE expression that extracts a 4-digit year from messy free-text
+    dates. Handles ISO ("1816-06-03"), bare year ("1759"), DMY
+    ("14 April 1878"), and modifier prefixes ("circa 1822", "about 1810").
+    Returns NULL if no plausible year is present.
+    """
+    return f"""
+        CASE
+          WHEN {col} IS NULL OR {col} = '' THEN NULL
+          WHEN substr({col}, 1, 4) GLOB '[12][0-9][0-9][0-9]'
+            THEN CAST(substr({col}, 1, 4) AS INTEGER)
+          WHEN length({col}) >= 4
+               AND substr({col}, length({col}) - 3, 4) GLOB '[12][0-9][0-9][0-9]'
+            THEN CAST(substr({col}, length({col}) - 3, 4) AS INTEGER)
+          ELSE NULL
+        END
+    """.strip()
+
+
+def _era_sql(year_expr: str) -> str:
+    """SQL CASE that maps a year integer to an era name. Mirrors era_for() in
+    scripts/export_geojson.py — keep the boundaries in sync."""
+    return f"""
+        CASE
+          WHEN ({year_expr}) IS NULL THEN NULL
+          WHEN ({year_expr}) < 1788 THEN 'Colonial Era'
+          WHEN ({year_expr}) < 1830 THEN 'Early Republic'
+          WHEN ({year_expr}) < 1865 THEN 'Civil War & Reconstruction'
+          WHEN ({year_expr}) < 1900 THEN 'Gilded Age'
+          WHEN ({year_expr}) < 1920 THEN 'Progressive Era & WWI'
+          WHEN ({year_expr}) < 1940 THEN 'Roaring 20s & Great Depression'
+          ELSE 'Modern'
+        END
+    """.strip()
+
+
 def capture_triggers(cur: sqlite3.Cursor, table: str) -> list[tuple[str, str]]:
     return [
         (n, s) for (n, s) in cur.execute(
@@ -131,17 +167,9 @@ def rebuild_derived(cur: sqlite3.Cursor) -> dict:
         )'''
     )
     cur.execute(
-        '''INSERT INTO "birth_location_points" (geom, person_id, primary_name, era, place_name)
+        f'''INSERT INTO "birth_location_points" (geom, person_id, primary_name, era, place_name)
            SELECT p.geom, pe.person_id, pe.primary_name,
-                  CASE
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1788 THEN 'Colonial Era'
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1830 THEN 'Early Republic'
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1865 THEN 'Civil War & Reconstruction'
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1900 THEN 'Gilded Age'
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1920 THEN 'Progressive Era & WWI'
-                      WHEN CAST(substr(pe.birth_date, 1, 4) AS INTEGER) < 1940 THEN 'Roaring 20s & Great Depression'
-                      ELSE 'Modern'
-                  END AS era,
+                  {_era_sql(_year_sql("pe.birth_date"))} AS era,
                   p.name
              FROM People pe
              JOIN Places p ON p.place_id = pe.birth_place_id
@@ -162,17 +190,9 @@ def rebuild_derived(cur: sqlite3.Cursor) -> dict:
         )'''
     )
     cur.execute(
-        '''INSERT INTO "death_location_points" (geom, person_id, primary_name, era, place_name)
+        f'''INSERT INTO "death_location_points" (geom, person_id, primary_name, era, place_name)
            SELECT p.geom, pe.person_id, pe.primary_name,
-                  CASE
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1788 THEN 'Colonial Era'
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1830 THEN 'Early Republic'
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1865 THEN 'Civil War & Reconstruction'
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1900 THEN 'Gilded Age'
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1920 THEN 'Progressive Era & WWI'
-                      WHEN CAST(substr(pe.death_date, 1, 4) AS INTEGER) < 1940 THEN 'Roaring 20s & Great Depression'
-                      ELSE 'Modern'
-                  END AS era,
+                  {_era_sql(_year_sql("pe.death_date"))} AS era,
                   p.name
              FROM People pe
              JOIN Places p ON p.place_id = pe.death_place_id
@@ -248,7 +268,7 @@ def rebuild_derived(cur: sqlite3.Cursor) -> dict:
         )'''
     )
 
-    def era_for(year: int | None) -> str:
+    def era_for(year):
         if year is None:
             return "Unknown"
         if year < 1788: return "Colonial Era"
@@ -259,19 +279,28 @@ def rebuild_derived(cur: sqlite3.Cursor) -> dict:
         if year < 1940: return "Roaring 20s & Great Depression"
         return "Modern"
 
+    def parse_year(s):
+        """Robustly extract a 4-digit year from a free-text date.
+        Mirrors _year_sql() above and era_for() in export_geojson.py."""
+        if not s:
+            return None
+        s = str(s)
+        head = s[:4]
+        if len(head) == 4 and head.isdigit() and head[0] in "12":
+            return int(head)
+        if len(s) >= 4:
+            tail = s[-4:]
+            if tail.isdigit() and tail[0] in "12":
+                return int(tail)
+        return None
+
     for r in line_rows:
         pid, name, bx, by, dx, dy, bd, dd, bname, dname, bpid, dpid = r
         if None in (bx, by, dx, dy):
             continue
         wkb = make_linestring_gpkg_wkb(bx, by, dx, dy)
-        try:
-            byear = int(str(bd)[:4]) if bd else None
-        except (ValueError, TypeError):
-            byear = None
-        try:
-            dyear = int(str(dd)[:4]) if dd else None
-        except (ValueError, TypeError):
-            dyear = None
+        byear = parse_year(bd)
+        dyear = parse_year(dd)
         myear = ((byear or 0) + (dyear or 0)) // 2 if byear and dyear else (byear or dyear)
         cur.execute(
             '''INSERT INTO "birth_to_death_lines_eras" (geom, person_id, primary_name, birth_year, death_year, mid_year, era, birth_pid, death_pid, birth_name, death_name)

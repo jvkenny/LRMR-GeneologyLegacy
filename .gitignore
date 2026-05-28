@@ -7,5 +7,13 @@
 .DS_Store
 .vscode/
 .idea/
+.claude/
+__pycache__/
+*.pyc
 *.gpkg.bak
 *.gpkg.*.bak
+*.gpkg.bak.*
+
+# Source/backup photo originals — only the optimized JPG ships
+docs/images/*.original.*
+docs/images/*.png

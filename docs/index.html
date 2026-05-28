@@ -2,295 +2,2429 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Family History Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Leaflet -->
+  <title>Leah Rae Mariotti-Reed Genealogy Legacy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="description" content="The Leah Rae Mariotti-Reed Genealogy Legacy — an interactive map of the family's birthplaces, lifespans and migrations across centuries." />
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <!-- MarkerCluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <style>
-    html, body, #map { height: 100%; margin: 0; }
-    .sidebar {
-      position: absolute; z-index: 1000; top: 10px; left: 10px;
-      background: white; padding: 10px 12px; border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,.15); max-width: 360px; font: 14px/1.3 system-ui, sans-serif;
-    }
-    .legend { margin-top: 8px; font-size: 13px; }
-    .legend div { margin: 4px 0; display:flex; align-items:center; gap:6px; }
-    .swatch { width:14px; height:14px; border-radius:3px; border:1px solid #3333; }
-    .dim { color:#666 }
-    .hidden { display:none; }
-    .sidebar h1 { margin: 0 0 8px; font-size: 24px; }
-    .descriptor { margin-bottom: 12px; }
+  <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/proj4leaflet@1.0.2/src/proj4leaflet.js"></script>
 
-    @media (max-width: 480px) {
-      .sidebar {
-        position: relative;
-        top: 0;
-        left: 0;
-        width: 100%;
-        margin: 0;
-        box-shadow: none;
-        border-radius: 0;
-        font-size: 16px;
-        padding: 12px 16px;
-      }
-      #sidebarToggle {
-        position: fixed;
-        z-index: 1000;
-        top: 10px;
-        right: 10px;
-      }
-      .sidebar h1 { font-size: 20px; }
+  <style>
+    :root {
+      --bg: #fefcf8;
+      --ink: #1f1b16;
+      --ink-dim: #6b6359;
+      --warm: #f5ecdf;
+      --accent: #8a4a2a;
+      --accent-soft: #c9876a;
+      --gold: #b8843a;
+      --panel: rgba(254, 252, 248, 0.92);
+      --panel-edge: rgba(31, 27, 22, 0.12);
+      --shadow-soft: 0 8px 24px rgba(31, 27, 22, 0.08);
+      --shadow-lift: 0 12px 36px rgba(31, 27, 22, 0.18);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --tap: 44px;
+
+      --era-colonial:           #5cb85c;
+      --era-early-republic:     #d9534f;
+      --era-civil-war:          #5bc0de;
+      --era-gilded:             #f0ad4e;
+      --era-progressive:        #337ab7;
+      --era-roaring:            #8e44ad;
+      --era-modern:             #1a8a5a;
+      --era-default:            #3742fa;
+
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
     }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    #map { position: absolute; inset: 0; background: #e6ebf0; transition: opacity .15s ease; }
+    /* Soft fade applied while we snap-transition between tour steps */
+    #map.map-flash { opacity: 0.55; }
+
+    /* Floating top action bar */
+    .top-bar {
+      position: absolute; top: calc(10px + var(--safe-top)); left: 10px; right: 10px;
+      z-index: 600;
+      display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none;
+    }
+    .chip {
+      pointer-events: auto;
+      min-height: var(--tap); padding: 0 14px;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--panel);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border: 1px solid var(--panel-edge);
+      border-radius: var(--tap);
+      font: 600 14px/1 inherit;
+      color: var(--ink);
+      box-shadow: var(--shadow-soft);
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .chip:hover { box-shadow: var(--shadow-lift); }
+    .chip:active { transform: scale(.97); }
+    .chip.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .chip.primary:hover { background: #6e3a21; }
+    .chip svg { width: 16px; height: 16px; flex: 0 0 16px; }
+    .chip-label { white-space: nowrap; }
+
+    /* Bottom time scrubber */
+    .scrubber {
+      position: absolute; left: 10px; right: 10px;
+      bottom: calc(10px + var(--safe-bottom));
+      z-index: 600;
+      background: var(--panel);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border: 1px solid var(--panel-edge);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: var(--tap) 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      transition: transform .3s cubic-bezier(.22,.61,.36,1), opacity .25s ease;
+    }
+    .scrubber.hidden { display: none; }
+    /* Collapsed: slide everything but the chevron off-screen */
+    .scrubber.collapsed {
+      transform: translateY(calc(100% + var(--safe-bottom) + 20px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scrubber-toggle {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--ink-dim);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .15s ease, color .15s ease;
+    }
+    .scrubber-toggle:hover { background: rgba(31,27,22,.08); color: var(--ink); }
+    .scrubber-toggle svg { width: 16px; height: 16px; }
+
+    /* Floating "show slider" handle that appears when scrubber is collapsed */
+    .scrubber-show {
+      position: absolute;
+      left: 50%; transform: translateX(-50%) translateY(60px);
+      bottom: calc(10px + var(--safe-bottom));
+      z-index: 600;
+      background: var(--panel);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border: 1px solid var(--panel-edge);
+      border-radius: 20px;
+      box-shadow: var(--shadow-soft);
+      padding: 6px 14px;
+      font: 600 12px/1 inherit;
+      color: var(--accent);
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      opacity: 0; pointer-events: none;
+      transition: transform .3s cubic-bezier(.22,.61,.36,1), opacity .25s ease;
+    }
+    .scrubber-show.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1; pointer-events: auto;
+    }
+    .scrubber-show svg { width: 14px; height: 14px; }
+    .play-btn {
+      width: var(--tap); height: var(--tap);
+      border-radius: 50%;
+      background: var(--accent); color: #fff;
+      border: none; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .15s ease, transform .1s ease;
+    }
+    .play-btn:hover { background: #6e3a21; }
+    .play-btn:active { transform: scale(.95); }
+    .play-btn svg { width: 18px; height: 18px; }
+
+    .scrubber input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none; appearance: none;
+      height: 6px; background: transparent;
+      padding: 14px 0; margin: 0;
+    }
+    .scrubber input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px; border-radius: 3px;
+      background: linear-gradient(to right, var(--accent-soft) var(--pct, 0%), rgba(31,27,22,.12) var(--pct, 0%));
+    }
+    .scrubber input[type="range"]::-moz-range-track {
+      height: 6px; border-radius: 3px;
+      background: linear-gradient(to right, var(--accent-soft) var(--pct, 0%), rgba(31,27,22,.12) var(--pct, 0%));
+    }
+    .scrubber input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
+      margin-top: -8px; cursor: pointer;
+    }
+    .scrubber input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18); cursor: pointer;
+    }
+    .scrubber .year-label {
+      font: 700 16px/1 inherit;
+      color: var(--ink);
+      min-width: 4.5ch; text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .scrubber .year-sub { font: 500 10px/1.1 inherit; color: var(--ink-dim); margin-top: 2px; text-align: right; }
+
+    /* Bottom sheet (mobile) / side panel (desktop) */
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      z-index: 700;
+      background: var(--panel);
+      backdrop-filter: saturate(180%) blur(18px);
+      -webkit-backdrop-filter: saturate(180%) blur(18px);
+      border-top: 1px solid var(--panel-edge);
+      border-radius: 20px 20px 0 0;
+      box-shadow: var(--shadow-lift);
+      transform: translateY(calc(100% - 0px));
+      transition: transform .35s cubic-bezier(.22,.61,.36,1);
+      max-height: calc(100% - 60px);
+      display: flex; flex-direction: column;
+      will-change: transform;
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet-handle {
+      padding: 8px 0 4px;
+      display: flex; justify-content: center;
+      cursor: grab; touch-action: none;
+    }
+    .sheet-handle::before {
+      content: ""; width: 44px; height: 5px; border-radius: 3px;
+      background: rgba(31,27,22,.18);
+    }
+    .sheet-body {
+      padding: 4px 18px calc(20px + var(--safe-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+    }
+    .sheet h1 { margin: 0 0 4px; font: 700 22px/1.15 inherit; letter-spacing: -0.01em; }
+    .sheet .lede { margin: 0 0 16px; color: var(--ink-dim); font-size: 14px; }
+
+    /* Small Leah portrait in the sheet header — click for the full dedication. */
+    .sheet-header {
+      display: flex; align-items: center; gap: 12px;
+      margin: 0 0 4px;
+    }
+    .sheet-header-text { flex: 1; min-width: 0; }
+    .sheet-header h1 { margin: 0; }
+    .sheet-portrait {
+      width: 48px; height: 48px; flex: 0 0 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      padding: 0; border: none;
+      background: linear-gradient(135deg, var(--warm), #efe2cc);
+      box-shadow: 0 2px 6px rgba(31, 27, 22, 0.15),
+                  0 0 0 2px var(--warm),
+                  0 0 0 3px var(--gold);
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .sheet-portrait:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(31, 27, 22, 0.22),
+                  0 0 0 2px var(--warm),
+                  0 0 0 3px var(--accent);
+    }
+    .sheet-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sheet-portrait.no-image img { display: none; }
+    .sheet-portrait-fallback {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      font: 600 16px/1 "Georgia", serif;
+      color: var(--accent);
+      letter-spacing: .02em;
+    }
+    .sheet-portrait.no-image .sheet-portrait-fallback { display: flex; }
+    .sheet .section { margin: 18px 0 6px; }
+    .sheet .section-label {
+      font: 600 11px/1 inherit; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--ink-dim); margin-bottom: 8px;
+    }
+
+    .era-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .era-pill {
+      min-height: 36px; padding: 0 12px;
+      border-radius: 18px;
+      border: 1px solid var(--panel-edge);
+      background: #fff;
+      font: 600 13px/1 inherit; color: var(--ink);
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+    }
+    .era-pill .swatch {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--c, var(--era-default));
+      flex: 0 0 12px;
+    }
+    .era-pill[aria-pressed="true"] {
+      background: var(--c, var(--accent));
+      color: #fff;
+      border-color: var(--c, var(--accent));
+    }
+    .era-pill[aria-pressed="true"] .swatch { background: #fff; }
+    .era-pill[aria-pressed="false"] { opacity: .62; }
+
+    .modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .mode-btn {
+      min-height: 40px; padding: 0 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--panel-edge);
+      background: #fff;
+      font: 600 13px/1.2 inherit; color: var(--ink);
+      cursor: pointer; text-align: left;
+      transition: background .15s ease;
+    }
+    .mode-btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .search-wrap { position: relative; }
+    .search-input {
+      width: 100%; min-height: var(--tap); padding: 0 14px;
+      font: 400 15px/1.2 inherit; color: var(--ink);
+      border: 1px solid var(--panel-edge); border-radius: var(--radius-sm);
+      background: #fff;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(138,74,42,.18); }
+    .search-results {
+      position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid var(--panel-edge);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lift);
+      max-height: 260px; overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    .search-results.open { display: block; }
+    .search-row {
+      padding: 10px 14px; cursor: pointer;
+      border-bottom: 1px solid rgba(31,27,22,.06);
+    }
+    .search-row:last-child { border-bottom: 0; }
+    .search-row:hover, .search-row.active { background: var(--warm); }
+    .search-row .name { font-weight: 600; font-size: 14px; }
+    .search-row .sub { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+
+    .stats {
+      display: flex; flex-wrap: wrap; gap: 4px 14px;
+      font-size: 12px; color: var(--ink-dim);
+    }
+    .stats b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .legend { font-size: 12px; }
+    .legend-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; color: var(--ink-dim); }
+    .legend-row .swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 12px; }
+
+    .dim-count { color: var(--ink-dim); font-weight: 500; }
+    .unmapped-summary {
+      cursor: pointer; padding: 6px 0; font-size: 13px; color: var(--accent);
+      list-style: none; outline: none;
+    }
+    .unmapped-summary::-webkit-details-marker { display: none; }
+    .unmapped-summary::before { content: "▸ "; font-size: 10px; }
+    details[open] .unmapped-summary::before { content: "▾ "; }
+    .unmapped-list { max-height: 220px; overflow-y: auto; margin-top: 4px; }
+    .unmapped-row {
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; transition: background .15s ease;
+    }
+    .unmapped-row:hover { background: var(--warm); }
+    .unmapped-row .name { font-weight: 600; }
+    .unmapped-row .sub { font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
+
+    .basemap-toggle { display: flex; gap: 4px; }
+    .basemap-toggle .mode-btn { min-height: 32px; padding: 0 10px; font-size: 12px; }
+
+    /* Popup styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      box-shadow: var(--shadow-lift);
+      background: var(--bg);
+    }
+    .leaflet-popup-content {
+      margin: 14px 16px;
+      font: 14px/1.45 inherit;
+      color: var(--ink);
+      max-width: min(320px, calc(100vw - 60px));
+    }
+    .popup-name { font: 700 16px/1.2 inherit; margin: 0 0 4px; }
+    .popup-life { font: 500 13px/1 inherit; color: var(--ink-dim); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+    .popup-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+    .popup-chip {
+      padding: 2px 8px; font: 600 11px/1.4 inherit;
+      border-radius: 10px; background: var(--warm); color: var(--ink);
+    }
+    .popup-chip.era { background: var(--c, var(--era-default)); color: #fff; }
+    .popup-row { display: flex; gap: 6px; font-size: 13px; padding: 2px 0; }
+    .popup-row .k { color: var(--ink-dim); min-width: 56px; flex-shrink: 0; }
+    .popup-row .v { color: var(--ink); }
+    .popup-notes { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(31,27,22,.08); font-size: 12.5px; color: var(--ink); line-height: 1.5; }
+    .popup-source { margin-top: 6px; font-size: 11px; color: var(--ink-dim); font-style: italic; }
+    .popup-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 10px; padding: 6px 10px;
+      border-radius: 8px; background: var(--accent); color: #fff !important;
+      text-decoration: none; font: 600 12px/1 inherit;
+    }
+    .popup-link:hover { background: #6e3a21; }
+
+    /* Centered modal overlay (used by the Dedication modal). Separate from
+       the non-blocking tour panel so it gets a proper dim backdrop and the
+       card can receive clicks. */
+    .modal-overlay {
+      position: absolute; inset: 0; z-index: 1000;
+      background: rgba(31, 27, 22, 0.55);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 16px;
+      animation: fade-in .25s ease;
+    }
+    .modal-overlay.open { display: flex; }
+
+    /* Dedication chip + modal */
+    .dedication-chip {
+      background: #fff;
+      color: var(--accent);
+      border-color: var(--panel-edge);
+    }
+    .dedication-chip svg { color: var(--accent); }
+    .dedication-chip:hover { background: #fff8f1; }
+
+    .dedication-card {
+      width: 100%; max-width: 460px;
+      background: var(--bg);
+      border-radius: 18px;
+      box-shadow: var(--shadow-lift);
+      padding: 28px 28px calc(24px + var(--safe-bottom));
+      max-height: calc(100% - 80px);
+      overflow-y: auto;
+      position: relative;
+      text-align: center;
+      animation: card-rise .35s cubic-bezier(.22,.61,.36,1);
+    }
+    .dedication-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--ink-dim);
+      font-size: 22px; line-height: 1;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .dedication-close:hover { background: var(--warm); color: var(--ink); }
+
+    .dedication-eyebrow {
+      font: italic 500 13px/1 inherit;
+      color: var(--ink-dim);
+      letter-spacing: .04em;
+      margin-bottom: 16px;
+    }
+    .dedication-portrait {
+      width: 160px; height: 160px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(31,27,22,.18), 0 0 0 6px var(--warm), 0 0 0 7px var(--gold);
+      position: relative;
+      background: linear-gradient(135deg, var(--warm), #efe2cc);
+    }
+    .dedication-portrait img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .dedication-portrait img:not([src]),
+    .dedication-portrait img[src=""] { display: none; }
+    .dedication-placeholder {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      font: 600 56px/1 "Georgia", "Times New Roman", serif;
+      color: var(--accent);
+      letter-spacing: .02em;
+    }
+    .dedication-portrait.no-image .dedication-placeholder { display: flex; }
+    .dedication-portrait.no-image img { display: none; }
+
+    .dedication-card h2 {
+      margin: 0 0 4px;
+      font: 700 22px/1.2 inherit;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .dedication-years {
+      font: 500 14px/1 inherit;
+      color: var(--ink-dim);
+      margin-bottom: 18px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .04em;
+    }
+    .dedication-message {
+      margin: 0;
+      font: 400 15px/1.65 "Georgia", "Times New Roman", serif;
+      color: var(--ink);
+      text-align: left;
+    }
+    .dedication-sig {
+      margin-top: 16px;
+      font: italic 500 14px/1 "Georgia", serif;
+      color: var(--ink-dim);
+      text-align: right;
+    }
+
+    /* Tour panel — non-blocking. Mobile: bottom sheet above the scrubber.
+       Desktop: floating side card on the right. Map stays interactive. */
+    .tour-overlay {
+      position: absolute; z-index: 950;
+      left: 8px; right: 8px;
+      bottom: calc(96px + var(--safe-bottom));  /* sit above the scrubber */
+      display: none;
+      pointer-events: none;  /* container ignores clicks; only card receives */
+      animation: fade-in .25s ease;
+    }
+    .tour-overlay.open { display: block; }
+    .tour-card {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 100%;
+      background: var(--panel);
+      backdrop-filter: saturate(180%) blur(18px);
+      -webkit-backdrop-filter: saturate(180%) blur(18px);
+      border: 1px solid var(--panel-edge);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lift);
+      padding: 14px 16px 12px;
+      max-height: 50vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      animation: card-rise .35s cubic-bezier(.22,.61,.36,1);
+      position: relative;
+    }
+    .tour-head {
+      display: flex; align-items: flex-start; gap: 8px;
+      margin-bottom: 6px;
+    }
+    .tour-head-text { flex: 1; min-width: 0; }
+    .tour-head-actions {
+      display: flex; align-items: center; gap: 6px;
+      flex: 0 0 auto;
+    }
+    .tour-next-top {
+      min-height: 32px; padding: 0 12px;
+      font: 600 12px/1 inherit;
+    }
+    .tour-step-label {
+      font: 700 10px/1 inherit; text-transform: uppercase; letter-spacing: .12em;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .tour-close {
+      width: 28px; height: 28px; flex: 0 0 28px;
+      border-radius: 50%; border: none;
+      background: rgba(31,27,22,.06); color: var(--ink-dim);
+      cursor: pointer; font-size: 18px; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .15s ease;
+    }
+    .tour-close:hover { background: rgba(31,27,22,.14); color: var(--ink); }
+    .tour-card h2 {
+      margin: 0 0 2px; font: 700 18px/1.2 inherit; letter-spacing: -0.01em;
+    }
+    .tour-card .years { font: 500 12px/1 inherit; color: var(--ink-dim); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .tour-tally {
+      font: 600 12px/1.3 inherit; color: var(--ink);
+      padding: 6px 10px; background: var(--warm); border-radius: 8px;
+      margin: 8px 0;
+    }
+    .tour-tally b { color: var(--accent); }
+
+    .tour-section { margin: 10px 0 4px; }
+    .tour-section h3 {
+      margin: 0 0 4px; font: 700 10px/1 inherit;
+      text-transform: uppercase; letter-spacing: .1em; color: var(--ink-dim);
+    }
+    .tour-section p { margin: 0 0 4px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+    .tour-section details { margin-top: 4px; }
+    .tour-section details summary {
+      cursor: pointer; font-size: 12px; color: var(--accent);
+      list-style: none; outline: none;
+    }
+    .tour-section details summary::-webkit-details-marker { display: none; }
+    .tour-section details summary::before { content: "▸ "; font-size: 10px; }
+    .tour-section details[open] summary::before { content: "▾ "; }
+
+    .tour-people, .tour-places { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tour-person, .tour-place {
+      font: 500 12px/1.2 inherit;
+      padding: 5px 9px;
+      background: #fff;
+      border: 1px solid var(--panel-edge);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tour-person:hover, .tour-place:hover {
+      background: var(--warm);
+      border-color: var(--accent);
+    }
+    .tour-person .years {
+      display: inline; font-size: 10px; color: var(--ink-dim); margin-left: 4px;
+    }
+    .tour-place { cursor: default; }
+    .tour-place:hover { background: var(--warm); border-color: var(--panel-edge); cursor: default; }
+
+    .tour-controls { display: flex; gap: 6px; margin-top: 10px; }
+    .tour-controls .chip { flex: 1; justify-content: center; min-height: 36px; padding: 0 10px; font-size: 13px; }
+
+    /* Dedication step inside the tour card */
+    .tour-dedication {
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .tour-portrait {
+      width: 72px; height: 72px; flex: 0 0 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(31,27,22,.16), 0 0 0 3px var(--warm), 0 0 0 4px var(--gold);
+      position: relative;
+      background: linear-gradient(135deg, var(--warm), #efe2cc);
+    }
+    .tour-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tour-portrait.no-image img { display: none; }
+    .tour-portrait-fallback {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      font: 600 26px/1 "Georgia", serif;
+      color: var(--accent);
+    }
+    .tour-portrait.no-image .tour-portrait-fallback { display: flex; }
+    .tour-dedication-text {
+      margin: 0; flex: 1;
+      font: italic 400 12.5px/1.5 "Georgia", "Times New Roman", serif;
+      color: var(--ink);
+    }
+
+    /* "Best on desktop" tip — only shown on small screens on the first step */
+    .tour-mobile-tip {
+      display: none;
+      margin: 10px 0 0;
+      padding: 8px 10px;
+      background: var(--warm);
+      border-left: 3px solid var(--gold);
+      border-radius: 6px;
+      font: italic 400 12px/1.45 inherit;
+      color: var(--ink);
+    }
+    @media (max-width: 767px) {
+      body.show-tour-mobile-tip .tour-mobile-tip { display: block; }
+    }
+
+    /* Explore step bullets */
+    .tour-explore { margin: 4px 0 0; padding-left: 18px; }
+    .tour-explore li { font-size: 12.5px; line-height: 1.5; color: var(--ink); margin: 3px 0; }
+    .tour-explore li b { color: var(--accent); font-weight: 700; }
+
+    /* Key-people callout pills */
+    .tour-person.key {
+      background: var(--warm);
+      border-color: var(--gold);
+    }
+    .tour-person .why {
+      display: block;
+      font: 400 10px/1.3 inherit;
+      color: var(--ink-dim);
+      margin-top: 2px;
+      white-space: normal;
+    }
+
+    @media (min-width: 768px) {
+      .tour-overlay {
+        left: auto; right: 16px;
+        top: calc(70px + var(--safe-top));
+        bottom: auto;
+        width: 380px;
+      }
+      .tour-card { max-height: calc(100vh - 160px); }
+    }
+
+    /* Layer fade-in */
+    .leaflet-overlay-pane svg path,
+    .leaflet-overlay-pane svg circle {
+      transition: opacity .25s ease, stroke-opacity .25s ease, fill-opacity .25s ease;
+    }
+
+    /* City labels — subtle, italic, parchment-aware */
+    .leaflet-tooltip.city-label {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      font: italic 500 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      color: #6e5a44;
+      text-shadow: 0 0 4px rgba(241, 233, 216, 0.85), 0 0 3px rgba(241, 233, 216, 0.85);
+      padding: 1px 4px;
+      pointer-events: none;
+    }
+    .leaflet-tooltip.city-label::before { display: none; }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes card-rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    /* Attention pulse for the Take the Tour chip — kicks in after 5s if the
+       user hasn't engaged with it yet. Subtle glow ring + a small breathing
+       scale so it feels like an invitation, not an alarm. */
+    @keyframes chip-pulse {
+      0%, 100% {
+        box-shadow: var(--shadow-soft), 0 0 0 0 rgba(138, 74, 42, 0.55);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: var(--shadow-lift), 0 0 0 10px rgba(138, 74, 42, 0);
+        transform: scale(1.04);
+      }
+    }
+    .chip.pulsing { animation: chip-pulse 1.8s ease-in-out infinite; }
+
+    @keyframes pulse-marker {
+      0%   { stroke-width: 1; r: var(--r, 7); }
+      50%  { stroke-width: 4; r: calc(var(--r, 7) + 4); }
+      100% { stroke-width: 1; r: var(--r, 7); }
+    }
+    @keyframes draw-line {
+      from { stroke-dashoffset: var(--len, 2000); }
+      to   { stroke-dashoffset: 0; }
+    }
+    .marker-pulse { animation: pulse-marker 1.8s ease-out infinite; }
+    .line-draw {
+      stroke-dasharray: var(--len, 2000);
+      stroke-dashoffset: var(--len, 2000);
+      animation: draw-line 1.2s ease-out forwards;
+    }
+    .feature-dim { opacity: .12 !important; }
+    .feature-hidden { opacity: 0 !important; pointer-events: none; }
+
+    /* Spinner overlay shown until first geojson loads */
+    .splash {
+      position: absolute; inset: 0; z-index: 900;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      background: var(--bg);
+      transition: opacity .35s ease;
+    }
+    .splash.hidden { opacity: 0; pointer-events: none; }
+    .splash-spinner {
+      width: 36px; height: 36px; border: 3px solid var(--panel-edge);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .splash-text { margin-top: 14px; font: 600 13px/1 inherit; color: var(--ink-dim); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Desktop layout: convert sheet to left side panel */
+    @media (min-width: 768px) {
+      .sheet {
+        right: auto; bottom: auto;
+        top: calc(10px + var(--safe-top));
+        left: 10px;
+        width: 360px;
+        max-height: calc(100% - 100px - var(--safe-bottom));
+        border-radius: var(--radius);
+        transform: translateX(calc(-100% - 20px));
+      }
+      .sheet.open { transform: translateX(0); }
+      .sheet-handle { display: none; }
+      .sheet-body { padding: 18px 18px 18px; }
+      .top-bar { left: auto; right: 10px; }
+      .scrubber {
+        left: 380px;
+      }
+      .scrubber.no-sheet { left: 10px; }
+      .tour-overlay { align-items: center; }
+      .tour-card { animation: fade-in .25s ease; }
+    }
+
+    /* Hide Leaflet default attribution control on small screens — moved to sheet */
+    @media (max-width: 480px) {
+      .leaflet-control-attribution { display: none; }
+    }
+
+    .leaflet-control-zoom { display: none; }
+    @media (min-width: 768px) { .leaflet-control-zoom { display: block; } }
+
+    /* Sheet open backdrop on mobile (so the user can see they tapped outside) */
+    .sheet-backdrop {
+      position: absolute; inset: 0; z-index: 690;
+      background: rgba(31,27,22,.3);
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s ease;
+    }
+    .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+    @media (min-width: 768px) { .sheet-backdrop { display: none; } }
   </style>
 </head>
 <body>
-  <div id="map"></div>
-  <div class="sidebar">
-    <h1>Family History Map</h1>
-    <p class="descriptor">Explore our family history through this interactive map. Points and lines highlight people, places, and events across time.</p>
-    <div>Click points/lines to see details. Use the layer toggle (top-right).</div>
-    <div id="updated" class="legend dim">Loading…</div>
-    <div id="eraLegend" class="legend"></div>
+  <div id="map" aria-label="Map of the Mariotti-Reed family's places"></div>
+
+  <div class="splash" id="splash" role="status" aria-live="polite">
+    <div class="splash-spinner" aria-hidden="true"></div>
+    <div class="splash-text">Loading family history…</div>
   </div>
 
-  <script>
-  // ---------- CONFIG ----------
-  const DATA = "data/";
+  <div class="top-bar">
+    <button class="chip" id="filtersBtn" aria-label="Open filters">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+      <span class="chip-label">Filters</span>
+    </button>
+    <button class="chip primary" id="tourBtn" aria-label="Take the tour">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span class="chip-label">Take the Tour</span>
+    </button>
+    <button class="chip dedication-chip" id="dedicationBtn" aria-label="In dedication to Leah Rae">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg>
+      <span class="chip-label">Dedication</span>
+    </button>
+  </div>
 
-  // Mobile adjustments: move sidebar above map and allow toggling
-  if (window.matchMedia("(max-width: 480px)").matches) {
-    const sidebar = document.querySelector(".sidebar");
-    const mapEl = document.getElementById("map");
-    sidebar.parentNode.insertBefore(sidebar, mapEl);
-    const btn = document.createElement("button");
-    btn.id = "sidebarToggle";
-    btn.textContent = "Toggle Info";
-    btn.addEventListener("click", () => sidebar.classList.toggle("hidden"));
-    document.body.appendChild(btn);
-  }
+  <div class="scrubber" id="scrubber" role="region" aria-label="Time scrubber">
+    <button class="play-btn" id="playBtn" aria-label="Play time animation">
+      <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <input type="range" id="yearSlider" min="1735" max="1936" value="1850" aria-label="Select year" />
+    <div>
+      <div class="year-label" id="yearLabel">1850</div>
+      <div class="year-sub">alive in year</div>
+    </div>
+    <button class="scrubber-toggle" id="scrubberToggle" aria-label="Hide time slider" title="Hide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
 
-  // Colors / sizes in one place
-  const STYLE = {
-    people:  { radius: 6, color: "#0A84FF" },
-    places:  { radius: 6, color: "#2ed573" },
-    births:  { radius: 6, color: "#1f77ff" },
-    deaths:  { radius: 6, color: "#e43f3f" },
-    events:  { color: "#ff6b6b", weight: 2, opacity: 0.9 },
-    lines:   { weight: 2.5, opacity: 0.95 },             // default for lines
-    // Era-specific palette (edit freely)
-    eraColors: {
-      "Early Republic": "#d9534f",
-      "Gilded Age": "#f0ad4e",
-      "Colonial Era": "#5cb85c",
-      "Civil War & Reconstruction": "#5bc0de",
-      "Progressive Era & WWI": "#337ab7",
-      "Roaring 20s & Great Depression": "#8e44ad"
+  <button class="scrubber-show" id="scrubberShow" aria-label="Show time slider">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    <span>Year scrubber</span>
+  </button>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+
+  <aside class="sheet" id="sheet" role="dialog" aria-label="Filters">
+    <div class="sheet-handle" id="sheetHandle" aria-hidden="true"></div>
+    <div class="sheet-body">
+      <div class="sheet-header">
+        <button class="sheet-portrait" id="sheetPortrait" aria-label="Open dedication">
+          <img id="sheetPortraitImg" src="images/leah-rae-mariotti-reed.jpg" alt="Leah Rae Mariotti-Reed" />
+          <span class="sheet-portrait-fallback" aria-hidden="true">LR</span>
+        </button>
+        <div class="sheet-header-text">
+          <h1>Mariotti-Reed Genealogy Legacy</h1>
+        </div>
+      </div>
+      <p class="lede">In honor of Leah Rae Mariotti-Reed. A century-spanning view of where the family was born, lived and laid to rest — tap a point for the story behind a name.</p>
+
+      <div class="section">
+        <div class="section-label">Search</div>
+        <div class="search-wrap">
+          <input class="search-input" id="searchInput"
+            type="text" placeholder="Search by name…"
+            inputmode="text" autocomplete="off" enterkeyhint="search" />
+          <div class="search-results" id="searchResults" role="listbox"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">View</div>
+        <div class="modes" role="radiogroup">
+          <button class="mode-btn" data-mode="all" aria-pressed="true">All layers</button>
+          <button class="mode-btn" data-mode="births" aria-pressed="false">Birthplaces</button>
+          <button class="mode-btn" data-mode="lines" aria-pressed="false">Lifespans</button>
+          <button class="mode-btn" data-mode="migration" aria-pressed="false">Migration</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Eras</div>
+        <div class="era-pills" id="eraPills"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Family</div>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="section" id="unmappedSection" style="display:none;">
+        <div class="section-label">
+          Without map location <span id="unmappedCount" class="dim-count"></span>
+        </div>
+        <details>
+          <summary class="unmapped-summary">Show list</summary>
+          <div class="unmapped-list" id="unmappedList"></div>
+        </details>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Legend</div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" id="dedicationOverlay" role="dialog" aria-modal="true" aria-labelledby="dedicationTitle">
+    <div class="dedication-card">
+      <button class="dedication-close" id="dedicationClose" aria-label="Close">×</button>
+      <div class="dedication-eyebrow">In dedication to</div>
+      <div class="dedication-portrait">
+        <img id="dedicationImg" alt="Leah Rae Mariotti-Reed" src="images/leah-rae-mariotti-reed.jpg" />
+        <div class="dedication-placeholder" id="dedicationPlaceholder" aria-hidden="true">LR</div>
+      </div>
+      <h2 id="dedicationTitle">Leah Rae Mariotti-Reed</h2>
+      <div class="dedication-years">1936 – 2025</div>
+      <p class="dedication-message">
+        My grandmother was the matriarch of our family and a devoted student
+        of genealogy. She and I were bound by a shared love of legacy,
+        lineage, and the stories that shape us. In life, she cherished her
+        family deeply, and treasured her place within the long unfolding —
+        the story of our family, and the story of humanity. Let this website
+        stand as a tribute to her devotion, and as a quiet reminder to carry,
+        always, unconditional love for one another.
+      </p>
+      <div class="dedication-sig">— John</div>
+    </div>
+  </div>
+
+  <div class="tour-overlay" id="tourOverlay" role="dialog" aria-labelledby="tourTitle">
+    <div class="tour-card" id="tourCard">
+      <div class="tour-head">
+        <div class="tour-head-text">
+          <div class="tour-step-label" id="tourStepLabel">Step 1 of 9</div>
+          <h2 id="tourTitle">—</h2>
+          <div class="years" id="tourYears">—</div>
+        </div>
+        <div class="tour-head-actions">
+          <button class="chip tour-next-top" id="tourBack">← Back</button>
+          <button class="chip primary tour-next-top" id="tourNextTop">Next →</button>
+          <button class="tour-close" id="tourSkip" aria-label="Close tour">×</button>
+        </div>
+      </div>
+
+      <div class="tour-tally" id="tourTally"></div>
+
+      <div class="tour-section" id="tourDedicationSection" style="display:none;">
+        <div class="tour-dedication">
+          <div class="tour-portrait">
+            <img id="tourDedImg" src="images/leah-rae-mariotti-reed.jpg" alt="Leah Rae Mariotti-Reed" />
+            <div class="tour-portrait-fallback">LR</div>
+          </div>
+          <p class="tour-dedication-text" id="tourDedText"></p>
+        </div>
+      </div>
+
+      <div class="tour-section" id="tourPeopleSection" style="display:none;">
+        <h3 id="tourPeopleHeading">Family in this era</h3>
+        <div class="tour-people" id="tourPeople"></div>
+      </div>
+
+      <div class="tour-section" id="tourExploreSection" style="display:none;">
+        <h3>How to explore</h3>
+        <ul class="tour-explore">
+          <li><b>🔍 Search</b> any name in the Filters panel to fly to that person.</li>
+          <li><b>Era chips</b> toggle birth, death and lifespan pins for a period.</li>
+          <li><b>Time slider</b> dims pins to show who was alive in a given year.</li>
+          <li><b>View modes</b> let you isolate Birthplaces, Lifespans or Migration lines.</li>
+          <li><b>♥ Dedication</b> revisits Leah Rae's story anytime.</li>
+        </ul>
+      </div>
+
+      <div class="tour-section" id="tourPlacesSection" style="display:none;">
+        <h3>Places they lived</h3>
+        <div class="tour-places" id="tourPlaces"></div>
+      </div>
+
+      <div class="tour-section" id="tourContextSection" style="display:none;">
+        <details>
+          <summary>Historical context</summary>
+          <div id="tourContextBlocks" style="margin-top:8px;"></div>
+        </details>
+      </div>
+
+      <div class="tour-mobile-tip" id="tourMobileTip">
+        Tip: this site is best viewed on a desktop. On mobile, drag the time
+        slider down or tap × to see the full map.
+      </div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+
+// ---------------------- Config ----------------------
+const DATA = "data/";
+
+const ERA_COLORS = {
+  "Colonial Era":                    getComputedStyle(document.documentElement).getPropertyValue("--era-colonial").trim()           || "#5cb85c",
+  "Early Republic":                  getComputedStyle(document.documentElement).getPropertyValue("--era-early-republic").trim()     || "#d9534f",
+  "Civil War & Reconstruction":      getComputedStyle(document.documentElement).getPropertyValue("--era-civil-war").trim()          || "#5bc0de",
+  "Gilded Age":                      getComputedStyle(document.documentElement).getPropertyValue("--era-gilded").trim()             || "#f0ad4e",
+  "Progressive Era & WWI":           getComputedStyle(document.documentElement).getPropertyValue("--era-progressive").trim()        || "#337ab7",
+  "Roaring 20s & Great Depression":  getComputedStyle(document.documentElement).getPropertyValue("--era-roaring").trim()            || "#8e44ad",
+  "Modern":                          getComputedStyle(document.documentElement).getPropertyValue("--era-modern").trim()             || "#1a8a5a",
+};
+
+const ERA_ORDER = [
+  "Colonial Era", "Early Republic", "Civil War & Reconstruction",
+  "Gilded Age", "Progressive Era & WWI", "Roaring 20s & Great Depression", "Modern",
+];
+
+const ERA_YEARS = {
+  "Colonial Era":                    [1607, 1775],
+  "Early Republic":                  [1776, 1828],
+  "Civil War & Reconstruction":      [1829, 1877],
+  "Gilded Age":                      [1878, 1900],
+  "Progressive Era & WWI":           [1901, 1918],
+  "Roaring 20s & Great Depression":  [1919, 1939],
+  "Modern":                          [1940, 2025],
+};
+
+const ERA_CONTEXT = {
+  "Colonial Era": {
+    us:     "British colonies hugged the Atlantic, dependent on tobacco, timber and the slave trade. Inland settlement was fitful and contested with Native nations; print culture and Atlantic religious revivals took root.",
+    czech:  "Bohemia and Moravia were Habsburg crown lands under Vienna's rule. After the Battle of White Mountain (1620) the Czech-speaking nobility was largely replaced and Counter-Reformation Catholicism re-imposed. German was the language of administration and trade.",
+    quebec: "New France stretched from the St. Lawrence to the Mississippi, a fur-trade and farming colony of about 70,000 people. French rule ended at the British conquest of 1760; afterwards the Quebec Act preserved French civil law and the Catholic Church.",
+    italy:  "The Italian peninsula was a patchwork of small states — the Papal States, the Kingdom of Naples (under Spanish then Austrian rule), the Republic of Venice, the Grand Duchy of Tuscany. Peasant life in the countryside changed little for generations; mass emigration was still over a century away.",
+  },
+  "Early Republic": {
+    us:     "The new United States expanded west of the Appalachians through the Louisiana Purchase and Indian removal. A market revolution — canals, turnpikes, the cotton gin — pulled rural families into commerce and migration.",
+    czech:  "Czech lands sat inside the post-Napoleonic Austrian Empire, governed from Vienna under Metternich's conservative order. Industry was beginning in northern Bohemia even as serfdom persisted into the 1840s.",
+    quebec: "Lower Canada (later Quebec) lived under British rule but with a French-Catholic majority. Tensions broke into the 1837–38 Patriotes rebellions, leading to the Act of Union of the Canadas in 1840.",
+    italy:  "Napoleonic France remade the peninsula's borders for fifteen years before the Congress of Vienna (1815) restored the old patchwork of kingdoms and duchies. The first stirrings of the Risorgimento — the movement for Italian unification — began among intellectuals and secret societies like the Carbonari.",
+  },
+  "Civil War & Reconstruction": {
+    us:     "The Civil War (1861–65) ended slavery and reshaped the country. Reconstruction in the South was followed by the rapid settlement of the Plains, transcontinental railroads, and the great post-1865 wave of European immigration.",
+    czech:  "1848 brought failed revolutions across the empire; serfdom was abolished. The 1867 Ausgleich gave Hungarians equal status but not the Czechs. Industrialization in Bohemia accelerated and emigration to America picked up dramatically.",
+    quebec: "Confederation (1867) made Quebec a province of the new Dominion of Canada. The Catholic Church dominated French-Canadian rural life, encouraging large families and ultramontane piety even as logging and rail tied the province into a continental economy.",
+    italy:  "Italian unification (the Risorgimento) was completed under King Victor Emmanuel II in 1861, with Rome added in 1870. Heavy taxation and crushing poverty under the new Kingdom triggered the first great waves of emigration from Tuscany, the Veneto and the south.",
+  },
+  "Gilded Age": {
+    us:     "Industrial fortunes, immigrant tenements and an unprecedented continental rail network. Tens of millions of new Americans — Czechs, Italians, French-Canadians, Irish — poured into Eastern and Midwestern cities and farm country.",
+    czech:  "Bohemia became the industrial heartland of Austria-Hungary. Czech national revival surged: language, literature and political parties. Mass emigration to Texas, Nebraska, Iowa, Chicago peaked in this generation.",
+    quebec: "Industrialization in Montreal and the rise of Quebec textile and pulp-and-paper towns. A parallel migration sent over half a million French-Canadians south to the New England mill towns by 1900.",
+    italy:  "The peak of Italian emigration — more than five million Italians left between 1880 and 1915, mostly from the south and the rural north. Tuscany emptied villages of working-age men. Northern industry began to rise in Milan, Turin and Genoa.",
+  },
+  "Progressive Era & WWI": {
+    us:     "Reform politics, women's suffrage on the horizon, and the Great Migration of Black Americans to Northern cities. The First World War (1917–18) drew the country into European politics and produced the 1918 flu pandemic.",
+    czech:  "Habsburg defeat in WWI ended 400 years of Austrian rule. Czechoslovakia was founded in October 1918 as an independent democratic republic under Tomáš Masaryk, fusing Czech, Slovak and German-speaking populations.",
+    quebec: "Quebec urbanized rapidly around Montreal. Conscription for WWI split the province along language lines — French-Canadians overwhelmingly opposed it — and shaped Quebec politics for decades.",
+    italy:  "Italy joined WWI on the Allied side in 1915, fighting a brutal mountain war against Austria-Hungary along the Isonzo and at Caporetto. The war devastated the north, killed 600,000 Italians, and left a political vacuum that Mussolini's Fascists would fill within four years.",
+  },
+  "Roaring 20s & Great Depression": {
+    us:     "Boom years, jazz, automobiles and the 1929 crash. The Depression hollowed out farming communities and sent New Deal money — REA electrification, AAA payments, WPA jobs — into the countryside.",
+    czech:  "Interwar Czechoslovakia was one of Europe's most prosperous, industrialized democracies. The 1938 Munich Agreement carved off the Sudetenland; in March 1939 Nazi Germany occupied the rest.",
+    quebec: "The Depression hit Quebec hard; the Catholic Church's social influence remained dominant under premiers Taschereau and Duplessis. Many French-Canadian families stayed close to home through these years.",
+    italy:  "Mussolini's Fascist regime ruled from 1922 to 1943, draining the south through war taxes and pulling Italy into Ethiopia, Albania, and eventually alliance with Nazi Germany. US immigration quotas (1924) cut off the safety valve of emigration; families that had stayed now stayed for good.",
+  },
+  "Modern": {
+    us:     "Post-WWII America: suburbanization, the Cold War, civil rights, deindustrialization, the digital age. By the 21st century, descendants of these immigrant families had spread across the country.",
+    czech:  "Communist rule (1948–89) restricted travel and contact with the West. The Velvet Revolution (1989) restored democracy; Czechoslovakia split peacefully in 1993 into the Czech Republic and Slovakia.",
+    quebec: "The Quiet Revolution of the 1960s secularized Quebec society, expanded the welfare state, and asserted French as the language of public life. Two referendums on independence (1980, 1995) narrowly failed.",
+    italy:  "Italy fought as an Axis power until 1943, then switched sides. The post-war Republic joined NATO and what would become the EU. The 1960s economic miracle modernized the north; the south remained poorer, and emigration shifted to within Europe.",
+  },
+};
+
+// Region labels in the order we want them to appear in the tour card.
+const REGION_LABELS = {
+  us:     "United States",
+  italy:  "Italy",
+  czech:  "Bohemia & Czech lands",
+  quebec: "Quebec & New France",
+};
+
+// Heuristic: detect what regions an era's ancestors lived in, based on
+// substrings appearing in birth_place_name / death_place_name. Lets us
+// show only the historical context that's actually relevant to the family.
+const REGION_PATTERNS = {
+  us:     [/\busa\b/i, /united states/i, /\b(Ohio|Iowa|Pennsylvania|Illinois|Connecticut|Massachusetts|Maine|Vermont|New Hampshire|New York|New Jersey|Virginia|Kentucky|Indiana|Michigan|Wisconsin|Missouri|Kansas|Nebraska|Minnesota|Maryland|Delaware|Rhode Island|North Carolina|South Carolina|Georgia|Florida|Alabama|Tennessee|Mississippi|Louisiana|Arkansas|Texas|Oklahoma|Colorado|California|Oregon|Washington|Arizona|New Mexico|Nevada|Utah|Wyoming|Montana|Idaho|North Dakota|South Dakota|Hawaii|Alaska|West Virginia)\b/i, /British Colonial America/i, /Colony/i],
+  italy:  [/\bItal(y|ia)\b/i, /\b(Tuscan|Tuscany|Toscana|Veneto|Lombard|Sicily|Naples|Calabria|Florence|Rome|Roma|Milan|Lucca|Pistoia|Pisa|Bologna|Modena|Parma|Genoa)\b/i],
+  czech:  [/\b(Bohemi|Czech|Moravia|Slovak|Austria-Hungary|Habsburg|Bavaria|Prague|Brno|Beneschau)\b/i],
+  quebec: [/\b(Quebec|Québec|Montréal|Montreal|New France|Lower Canada|British North America|Saint[- ]?Laurent|Trois[- ]?Rivières|Orléans|Acadia|Canada)\b/i],
+};
+
+function detectRegions(people) {
+  const found = new Set();
+  for (const p of people) {
+    const haystack = [p.birth_place_name, p.death_place_name, p.place_name]
+      .filter(Boolean).join(" | ");
+    if (!haystack) continue;
+    for (const [region, patterns] of Object.entries(REGION_PATTERNS)) {
+      if (found.has(region)) continue;
+      if (patterns.some(re => re.test(haystack))) found.add(region);
     }
-  };
-
-  // Popup field lists (set to null to show ALL attributes)
-  const FIELDS = {
-    people: [
-      ["primary_name","Name"],
-      ["sex","Sex"],
-      ["birth_year","Birth Year"],
-      ["death_year","Death Year"],
-      ["birth_place_name","Birth Place"],
-      ["death_place_name","Death Place"],
-      ["residence","Residence"]
-    ],
-    places: [
-      ["place_name","Place"],
-      ["place_type","Type"],
-      ["country","Country"],
-      ["state","State"], ["county","County"]
-    ],
-    events: [
-      ["event_type","Type"], ["event_year","Year"], ["description","Description"]
-    ],
-    births: [
-      ["primary_name","Name"], ["birth_year","Birth Year"], ["birth_place_name","Birth Place"]
-    ],
-    deaths: [
-      ["primary_name","Name"], ["death_year","Death Year"], ["death_place_name","Death Place"]
-    ],
-    lines: [
-      ["primary_name","Name"], ["era","Era"], ["birth_year","Birth Year"], ["death_year","Death Year"]
-    ]
-  };
-
-  // ---------- Small helpers ----------
-  function loadJson(url, onOk) {
-    return fetch(url).then(r => {
-      if (!r.ok) throw new Error(`${r.status} ${r.statusText} – ${url}`);
-      return r.json();
-    }).then(onOk).catch(err => console.error("Layer load failed:", err));
   }
+  // Preserve REGION_LABELS order
+  return Object.keys(REGION_LABELS).filter(r => found.has(r));
+}
 
-  function popupTable(props, fieldList=null) {
-    const entries = fieldList
-      ? fieldList.filter(([k]) => props[k] != null && props[k] !== "")
-                .map(([k,label]) => [label, props[k]])
-      : Object.entries(props).filter(([k,v]) => v != null && v !== "" && typeof v !== "object");
-    const rows = entries.map(([k,v]) =>
-      `<tr><th style="text-align:left; padding-right:.5rem; white-space:nowrap;">${k}</th><td>${v}</td></tr>`).join("");
-    return `<table>${rows}</table>`;
+const MODES = {
+  all:       { births: true, deaths: true, lines: true,  events: false, people: false, places: false },
+  births:    { births: true, deaths: false, lines: false, events: false, people: false, places: false },
+  lines:     { births: false, deaths: false, lines: true,  events: false, people: false, places: false },
+  migration: { births: true, deaths: true, lines: true,  events: false, people: false, places: false },
+};
+
+// ---------------------- State ----------------------
+const state = {
+  mode: "all",
+  activeEras: new Set(ERA_ORDER),
+  year: 1850,
+  manifest: null,
+  searchIdx: [],
+  layers: {},
+  geoJson: {},
+  isPlaying: false,
+  playTimer: null,
+  baseLayers: {},
+  activeBase: "gray",
+  personIndex: new Map(),
+  tourStep: 0,
+  tourEras: [],
+};
+
+function eraColor(era) { return ERA_COLORS[era] || ERA_COLORS["Modern"] || "#3742fa"; }
+function eraYears(era) { return ERA_YEARS[era] || [1735, 1940]; }
+function isTouch() { return matchMedia("(pointer: coarse)").matches; }
+function pointRadius() { return isTouch() ? 9 : 7; }
+
+// ---------------------- Map ----------------------
+// NAD83 / Conus Albers (EPSG:5070) — same projection as the QGIS project.
+// Equal-area, centered on -96°, with standard parallels 29.5°N / 45.5°N.
+// Renders North America undistorted; Europe is shifted to the east edge but
+// the relative geography between the family's homelands stays honest.
+proj4.defs("EPSG:5070",
+  "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 " +
+  "+ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+const ALBERS = new L.Proj.CRS(
+  "EPSG:5070",
+  "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 " +
+  "+ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+  {
+    // Top-left of the displayable extent in projected meters.
+    // Tuned to cover Pacific NW down through south Atlantic, eastward to central Europe.
+    origin: [-7000000, 9000000],
+    // 14 zoom levels in geometric powers of 2.
+    // At z=0 the view spans ~33,500 km wide; at z=13 about 4 km/px.
+    resolutions: Array.from({ length: 14 }, (_, i) => 131072 / Math.pow(2, i)),
   }
+);
 
-  const eraColor = era => STYLE.eraColors[era] || "#3742fa";
+const _isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+const map = L.map("map", {
+  crs: ALBERS,
+  zoomControl: false,
+  attributionControl: true,
+  worldCopyJump: false,
+  preferCanvas: false,
+  minZoom: 0,
+  maxZoom: 12,
+}).setView(
+  // Always land centered over the US-Atlantic corridor where the family
+  // actually lived, not the geographic centroid of all the data (which
+  // gets pulled north into Canada by a few outliers).
+  [41, -83],
+  4,
+);
+L.control.zoom({ position: "topright" }).addTo(map);
+// Custom pane so family pins + lines render ABOVE basemap city labels.
+// Leaflet defaults: overlay=400, marker=600, tooltip=650, popup=700.
+map.createPane("familyPins");
+map.getPane("familyPins").style.zIndex = 660;  // above tooltips, below popups
+// Expose for debug
+window._state = state;
+window._map = map;
 
-  // ---------- Map ----------
-  const map = L.map("map").setView([41.9, -87.65], 5);
-  const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+// Multi-layer basemap from Natural Earth 1:50m. Vector data projects cleanly
+// into the Albers CRS (no tile reprojection). Each layer is drawn under the
+// era pins; styles match the warm "sandy washy" aesthetic.
+const NE_BASE = "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson";
+const BASEMAP_URLS = {
+  countries:    NE_BASE + "/ne_50m_admin_0_countries.geojson",
+  states:       NE_BASE + "/ne_50m_admin_1_states_provinces_lines.geojson",
+  lakes:        NE_BASE + "/ne_50m_lakes.geojson",
+  cities:       NE_BASE + "/ne_50m_populated_places_simple.geojson",
+};
 
-  // Extra basemaps (optional – uncomment if you want more)
-  const esriGray = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-    { attribution: "Tiles © Esri" }
-  );
-  const esriNatGeo = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
-    { attribution: "Tiles © Esri" }
-  );
+const BASEMAP_STYLE = {
+  countries: {
+    color: "#a59683",       // weathered ink border
+    weight: 1.0,
+    fillColor: "#f1e9d8",   // warm parchment landmass
+    fillOpacity: 1,
+  },
+  states: {
+    color: "#bba990",
+    weight: 0.6,
+    dashArray: "1,3",       // dashed for visual hierarchy (subordinate to country)
+    fillOpacity: 0,
+  },
+  lakes: {
+    color: "#a8b8c4",
+    weight: 0.5,
+    fillColor: "#dbe3ea",   // pale washed-blue water
+    fillOpacity: 1,
+  },
+};
 
-  const baseLayers = {
-    "OpenStreetMap": osm,
-    "ESRI Gray (light)": esriGray,
-    "ESRI NatGeo": esriNatGeo
-  };
+const basemapLayers = {};
 
-  const layersControl = L.control.layers(
-    baseLayers,
-    {},
-    { collapsed: window.innerWidth < 600 }
-  ).addTo(map);
+function loadBasemap() {
+  // Countries first (so they paint underneath everything else).
+  return loadJson(BASEMAP_URLS.countries).then(data => {
+    basemapLayers.countries = L.geoJSON(data, { style: BASEMAP_STYLE.countries, interactive: false }).addTo(map);
+    basemapLayers.countries.bringToBack();
+    map.attributionControl.addAttribution("Basemap: Natural Earth");
 
-  window.addEventListener('resize', () => {
-    const shouldCollapse = window.innerWidth < 600;
-    if (shouldCollapse !== layersControl.options.collapsed) {
-      layersControl.options.collapsed = shouldCollapse;
-      shouldCollapse ? layersControl.collapse() : layersControl.expand();
-    }
-  });
+    // States/provinces — visible at all zooms; their visual weight is so light
+    // that they read as texture from far out and as borders up close.
+    loadJson(BASEMAP_URLS.states).then(d => {
+      basemapLayers.states = L.geoJSON(d, { style: BASEMAP_STYLE.states, interactive: false });
+      basemapLayers.states.addTo(map);
+      // Sit above countries fill, below pins.
+      basemapLayers.countries.bringToBack();
+    }).catch(err => console.warn("States load failed:", err));
 
-  const overlays = {};
-  function addOverlay(layer, name, addNow=true) {
-    overlays[name] = layer;
-    layersControl.addOverlay(layer, name);
-    if (addNow) map.addLayer(layer);
-    fitIfNeeded();
-  }
+    // Lakes.
+    loadJson(BASEMAP_URLS.lakes).then(d => {
+      basemapLayers.lakes = L.geoJSON(d, { style: BASEMAP_STYLE.lakes, interactive: false });
+      basemapLayers.lakes.addTo(map);
+      basemapLayers.countries.bringToBack();
+    }).catch(err => console.warn("Lakes load failed:", err));
 
-  // Data last updated
-  fetch(DATA + "places.geojson", { method: "HEAD" })
-    .then(r => {
-      const d = r.headers.get("last-modified");
-      document.getElementById("updated").textContent =
-        d ? `Data last updated: ${new Date(d).toLocaleString()}` : "";
-    }).catch(() => {});
-
-  // ---------- People (Person_Locations) ----------
-  loadJson(DATA + "people.geojson", data => {
-    const cluster = L.markerClusterGroup();
-    const layer = L.geoJSON(data, {
-      pointToLayer: (f, latlng) =>
-        L.circleMarker(latlng, { radius: STYLE.people.radius, color: STYLE.people.color, weight: 1, fillOpacity: .85 }),
-      onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.people))
-    });
-    cluster.addLayer(layer);
-    addOverlay(cluster, "People", true);
-  });
-
-  // ---------- Places ----------
-  loadJson(DATA + "places.geojson", data => {
-    const layer = L.geoJSON(data, {
-      pointToLayer: (f, latlng) =>
-        L.circleMarker(latlng, { radius: STYLE.places.radius, color: STYLE.places.color, weight: 1, fillOpacity: .6 }),
-      style: () => ({ color: STYLE.places.color, weight: 2, opacity: .8, fillOpacity: .2 }),
-      onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.places))
-    });
-    addOverlay(layer, "Places", true);
-  });
-
-  // ---------- Events (Event_Points) ----------
-  loadJson(DATA + "events.geojson", data => {
-    const layer = L.geoJSON(data, {
-      pointToLayer: (f, latlng) =>
-        L.circleMarker(latlng, { radius: 6, color: "#b30000", weight: 1, fillOpacity: .9 }),
-      style: () => ({ ...STYLE.events }),
-      onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.events))
-    });
-    addOverlay(layer, "Events", false);
-  });
-
-  // ---------- Birth / Death points ----------
-  loadJson(DATA + "birth_location_points.geojson", data => {
-    const layer = L.geoJSON(data, {
-      pointToLayer: (f, latlng) =>
-        L.circleMarker(latlng, { radius: STYLE.births.radius, color: STYLE.births.color, weight: 1, fillOpacity: .9 }),
-      onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.births))
-    });
-    addOverlay(layer, "Birth Points", true);
-  });
-
-  loadJson(DATA + "death_location_points.geojson", data => {
-    const layer = L.geoJSON(data, {
-      pointToLayer: (f, latlng) =>
-        L.circleMarker(latlng, { radius: STYLE.deaths.radius, color: STYLE.deaths.color, weight: 1, fillOpacity: .9 }),
-      onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.deaths))
-    });
-    addOverlay(layer, "Death Points", true);
-  });
-
-  // ---------- Birth→Death Lines split into toggles per Era ----------
-  loadJson(DATA + "birth_to_death_lines_eras.geojson", data => {
-    const eras = Array.from(
-      new Set((data.features || []).map(f => (f.properties || {}).era).filter(Boolean))
-    ).sort();
-    // Build a layer for each era, add each as its own toggle
-    eras.forEach(era => {
-      const sub = L.geoJSON(data, {
-        filter: f => (f.properties || {}).era === era,
-        style: () => ({ color: eraColor(era), weight: STYLE.lines.weight, opacity: STYLE.lines.opacity }),
-        onEachFeature: (f, l) => l.bindPopup(popupTable(f.properties || {}, FIELDS.lines))
+    // Populated places: render labels for major cities. Filter by scalerank
+    // so we don't dump thousands of dots; show progressively more at higher
+    // zoom via a `zoomend` handler.
+    loadJson(BASEMAP_URLS.cities).then(d => {
+      basemapLayers.cities = L.geoJSON(d, {
+        pointToLayer: (f, latlng) => {
+          const r = (f.properties && f.properties.scalerank) ?? 10;
+          const isCapital = (f.properties && f.properties.featurecla || "").indexOf("capital") >= 0;
+          const m = L.circleMarker(latlng, {
+            radius: isCapital ? 3 : 2,
+            color: "#8a7560",
+            fillColor: isCapital ? "#8a7560" : "#b8a896",
+            weight: 0.6,
+            fillOpacity: 0.85,
+            interactive: false,
+            pane: "markerPane",
+          });
+          m._scalerank = r;
+          m._cityName = (f.properties && (f.properties.name || f.properties.NAME)) || "";
+          return m;
+        },
+        interactive: false,
       });
-      addOverlay(sub, `Lines: ${era}`, true);
-    });
+      basemapLayers.cities.addTo(map);
+      updateCityLabels();
+      map.on("zoomend", updateCityLabels);
+    }).catch(err => console.warn("Cities load failed:", err));
+  }).catch(err => console.warn("Basemap load failed:", err));
+}
 
-    // Build a legend from STYLE.eraColors
-    const legendEl = document.getElementById("eraLegend");
-    legendEl.innerHTML = "<b>Birth→Death Lines (Eras)</b>" +
-      Object.entries(STYLE.eraColors)
-        .map(([label, col]) => `<div><span class="swatch" style="background:${col}"></span> ${label}</div>`)
-        .join("");
+// City label visibility: tied to zoom + scalerank. Lower scalerank = bigger
+// city = visible earlier. At zoom 2 only world capitals show; by zoom 6 we
+// reveal regional centers; at zoom 8+ everything labeled.
+function updateCityLabels() {
+  const layer = basemapLayers.cities;
+  if (!layer) return;
+  const z = map.getZoom();
+  // scalerank cutoff: keep cities where scalerank <= cutoff.
+  // Natural Earth populated_places scalerank: 0 = world tier (Tokyo, NYC),
+  // 1 = mega-region (Chicago, Paris), 5 = state capital, 10 = town. The
+  // family pins are the primary visual; cities are context only, so keep
+  // labels sparse until the user has zoomed deep.
+  const cutoff = z <= 2 ? -1   // nothing — just family pins on a clean basemap
+              : z <= 3 ? 0
+              : z <= 4 ? 2
+              : z <= 5 ? 4
+              : z <= 6 ? 6
+              : z <= 7 ? 8 : 10;
+  layer.eachLayer(m => {
+    const show = (m._scalerank ?? 10) <= cutoff;
+    const path = m._path;
+    if (path) path.style.opacity = show ? "1" : "0";
+    if (show && !m._tooltipBound && m._cityName) {
+      m.bindTooltip(m._cityName, {
+        permanent: true, direction: "right", offset: [5, 0],
+        className: "city-label", opacity: 0.9,
+      });
+      m._tooltipBound = true;
+    }
+    if (m._tooltipBound) {
+      // Toggle tooltip visibility based on `show`.
+      const tt = m.getTooltip();
+      if (tt) {
+        const el = tt.getElement();
+        if (el) el.style.display = show ? "" : "none";
+      }
+    }
+  });
+}
+
+// ---------------------- Helpers ----------------------
+function loadJson(url) {
+  return fetch(url).then(r => {
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${url}`);
+    return r.json();
+  });
+}
+
+function safe(x) {
+  if (x == null) return "";
+  return String(x).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+function lifespanText(birth, death) {
+  if (birth && death) return `${birth} – ${death}`;
+  if (birth) return `b. ${birth}`;
+  if (death) return `d. ${death}`;
+  return "";
+}
+
+function popupHtml(person, kind) {
+  const era = person.era;
+  const eraC = era ? eraColor(era) : null;
+  const life = lifespanText(person.birth_year, person.death_year);
+  const place = kind === "death" ? person.death_place_name : person.birth_place_name;
+
+  let html = `<div class="popup-name">${safe(person.primary_name || "Unknown")}</div>`;
+  if (life || person.sex) {
+    const sex = person.sex ? person.sex.charAt(0).toUpperCase() + person.sex.slice(1) : "";
+    const parts = [life, sex].filter(Boolean);
+    html += `<div class="popup-life">${safe(parts.join(" · "))}</div>`;
+  }
+
+  const chips = [];
+  if (era) chips.push(`<span class="popup-chip era" style="--c:${eraC}">${safe(era)}</span>`);
+  if (person.branch) chips.push(`<span class="popup-chip">${safe(person.branch)}</span>`);
+  if (chips.length) html += `<div class="popup-chips">${chips.join("")}</div>`;
+
+  if (person.birth_place_name) html += `<div class="popup-row"><span class="k">Born</span><span class="v">${safe(person.birth_place_name)}</span></div>`;
+  if (person.death_place_name) html += `<div class="popup-row"><span class="k">Died</span><span class="v">${safe(person.death_place_name)}</span></div>`;
+
+  if (person.notes) {
+    const notes = person.notes.length > 240 ? person.notes.slice(0, 240).trim() + "…" : person.notes;
+    html += `<div class="popup-notes">${safe(notes)}</div>`;
+  }
+  if (person.source_summary) html += `<div class="popup-source">Source: ${safe(person.source_summary)}</div>`;
+
+  if (person.fs_id) {
+    html += `<a class="popup-link" target="_blank" rel="noopener noreferrer" href="https://www.familysearch.org/tree/person/details/${encodeURIComponent(person.fs_id)}">
+      View on FamilySearch <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+    </a>`;
+  }
+
+  return html;
+}
+
+function eventPopupHtml(props) {
+  const eraGuess = props.event_year ? eraOfYear(props.event_year) : null;
+  let html = `<div class="popup-name">${safe(props.title || props.event_type || "Event")}</div>`;
+  if (props.date_start) html += `<div class="popup-life">${safe(props.date_start)}</div>`;
+  const chips = [];
+  if (props.event_type) chips.push(`<span class="popup-chip">${safe(props.event_type)}</span>`);
+  if (eraGuess) chips.push(`<span class="popup-chip era" style="--c:${eraColor(eraGuess)}">${safe(eraGuess)}</span>`);
+  if (chips.length) html += `<div class="popup-chips">${chips.join("")}</div>`;
+  if (props.primary_name) html += `<div class="popup-row"><span class="k">Person</span><span class="v">${safe(props.primary_name)}</span></div>`;
+  if (props.place_name) html += `<div class="popup-row"><span class="k">Place</span><span class="v">${safe(props.place_name)}</span></div>`;
+  if (props.description) html += `<div class="popup-notes">${safe(props.description)}</div>`;
+  return html;
+}
+
+function placePopupHtml(props) {
+  let html = `<div class="popup-name">${safe(props.name || "Place")}</div>`;
+  if (props.std_name && props.std_name !== props.name) html += `<div class="popup-life">${safe(props.std_name)}</div>`;
+  if (props.admin_hierarchy) html += `<div class="popup-row"><span class="k">Region</span><span class="v">${safe(props.admin_hierarchy)}</span></div>`;
+  if (props.geocode_quality) html += `<div class="popup-row"><span class="k">Geocode</span><span class="v">${safe(props.geocode_quality)}</span></div>`;
+  if (props.notes) html += `<div class="popup-notes">${safe(props.notes)}</div>`;
+  return html;
+}
+
+function eraOfYear(y) {
+  for (const era of ERA_ORDER) {
+    const [a, b] = ERA_YEARS[era];
+    if (y >= a && y <= b) return era;
+  }
+  return null;
+}
+
+function aliveAtYear(props, year) {
+  const b = props.birth_year, d = props.death_year;
+  if (!b && !d) return true;
+  if (b && b > year) return false;
+  if (d && d < year) return false;
+  return true;
+}
+
+// ---------------------- Layer construction ----------------------
+function styleForEra(props, base) {
+  const era = props.era;
+  const c = era ? eraColor(era) : "#3742fa";
+  return { color: c, fillColor: c, weight: 1, fillOpacity: 0.82, opacity: 0.9, ...base };
+}
+
+function makePointLayer(geojson, kind) {
+  const layer = L.geoJSON(geojson, {
+    pointToLayer: (f, latlng) => {
+      const r = pointRadius();
+      const m = L.circleMarker(latlng, {
+        radius: r,
+        weight: 1.4,
+        color: "#fff",
+        pane: "familyPins",
+        ...styleForEra(f.properties, { weight: 1.4 }),
+      });
+      m._kind = kind;
+      m._props = f.properties;
+      return m;
+    },
+    onEachFeature: (f, l) => {
+      const p = { ...(f.properties || {}) };
+      // attach the cross-layer enriched person for popup
+      const enriched = state.personIndex.get(p.person_id) || {};
+      const merged = { ...enriched, ...p };
+      if (kind === "birth") merged.birth_place_name = merged.birth_place_name || p.place_name;
+      if (kind === "death") merged.death_place_name = merged.death_place_name || p.place_name;
+      l.bindPopup(() => popupHtml(merged, kind), { autoPan: true, maxWidth: 320, autoClose: false });
+      l.on("popupopen", () => l._path && l._path.classList.add("marker-pulse"));
+      l.on("popupclose", () => l._path && l._path.classList.remove("marker-pulse"));
+    },
+  });
+  return layer;
+}
+
+function makeLineLayer(geojson) {
+  return L.geoJSON(geojson, {
+    pane: "familyPins",
+    style: f => {
+      const c = eraColor(f.properties && f.properties.era);
+      return { color: c, weight: 2.6, opacity: 0.85, className: "line-draw" };
+    },
+    onEachFeature: (f, l) => {
+      const p = f.properties || {};
+      l.bindPopup(() => popupHtml(p, "line"), { autoPan: true, maxWidth: 320 });
+    },
+  });
+}
+
+function makeEventLayer(geojson) {
+  return L.geoJSON(geojson, {
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+      radius: 5, color: "#b03030", fillColor: "#ff6b6b", weight: 1, fillOpacity: .85,
+    }),
+    onEachFeature: (f, l) => l.bindPopup(() => eventPopupHtml(f.properties || {}), { maxWidth: 300 }),
+  });
+}
+
+function makePlacesLayer(geojson) {
+  return L.geoJSON(geojson, {
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+      radius: 4, color: "#2c7a4d", fillColor: "#a4d4b8", weight: 1, fillOpacity: .6,
+    }),
+    onEachFeature: (f, l) => l.bindPopup(() => placePopupHtml(f.properties || {}), { maxWidth: 280 }),
+  });
+}
+
+// ---------------------- Filter application ----------------------
+function applyFilters() {
+  const modeCfg = MODES[state.mode];
+  Object.entries(state.layers).forEach(([key, layer]) => {
+    if (!layer) return;
+    const visible = !!modeCfg[key];
+    if (visible && !map.hasLayer(layer)) map.addLayer(layer);
+    if (!visible && map.hasLayer(layer)) map.removeLayer(layer);
   });
 
-  // ----- Fit map to visible layers once -----
-  let fitted = false;
-  function fitIfNeeded() {
-    if (fitted) return;
-    let bounds = null;
-    for (const layer of Object.values(overlays)) {
-      if (!map.hasLayer(layer)) continue;
-      try {
-        const b = layer.getBounds ? layer.getBounds() : L.featureGroup([layer]).getBounds();
-        if (b && b.isValid()) bounds = bounds ? bounds.extend(b) : b;
-      } catch {}
+  // Per-feature era + alive-at-year filter
+  ["births", "deaths", "lines"].forEach(key => {
+    const layer = state.layers[key];
+    if (!layer) return;
+    layer.eachLayer(sub => {
+      const props = sub.feature && sub.feature.properties || sub._props || {};
+      const era = props.era;
+      const eraOk = !era || state.activeEras.has(era);
+      const yearOk = aliveAtYear(props, state.year);
+      const path = sub._path;
+      if (!path) return;
+      path.classList.remove("feature-hidden", "feature-dim");
+      if (!eraOk) path.classList.add("feature-hidden");
+      else if (!yearOk) path.classList.add("feature-dim");
+    });
+  });
+}
+
+// ---------------------- UI building ----------------------
+function buildEraPills() {
+  const el = document.getElementById("eraPills");
+  el.innerHTML = "";
+  ERA_ORDER.forEach(era => {
+    if (!state.manifest || !state.manifest.eras || !state.manifest.eras.includes(era)) {
+      // hide eras that aren't present in this dataset
+      return;
     }
-    if (bounds && bounds.isValid()) {
-      map.fitBounds(bounds.pad(0.15));
-      fitted = true;
+    const btn = document.createElement("button");
+    btn.className = "era-pill";
+    btn.setAttribute("aria-pressed", "true");
+    btn.style.setProperty("--c", eraColor(era));
+    btn.innerHTML = `<span class="swatch" aria-hidden="true"></span>${safe(era)}`;
+    btn.addEventListener("click", () => {
+      if (state.activeEras.has(era)) state.activeEras.delete(era);
+      else state.activeEras.add(era);
+      btn.setAttribute("aria-pressed", state.activeEras.has(era) ? "true" : "false");
+      applyFilters();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function buildLegend() {
+  const el = document.getElementById("legend");
+  el.innerHTML = "";
+  ERA_ORDER.forEach(era => {
+    if (!state.manifest || !state.manifest.eras || !state.manifest.eras.includes(era)) return;
+    const row = document.createElement("div");
+    row.className = "legend-row";
+    row.innerHTML = `<span class="swatch" style="background:${eraColor(era)}"></span>${safe(era)} <span style="color:var(--ink-dim);">(${eraYears(era)[0]}–${eraYears(era)[1]})</span>`;
+    el.appendChild(row);
+  });
+}
+
+function buildStats() {
+  const m = state.manifest || {};
+  document.getElementById("stats").innerHTML =
+    `<span><b>${m.person_count ?? "?"}</b> people</span>` +
+    `<span><b>${m.place_count ?? "?"}</b> places</span>` +
+    `<span><b>${m.event_count ?? "?"}</b> events</span>` +
+    (m.year_min ? `<span><b>${m.year_min}–${m.year_max}</b></span>` : "");
+}
+
+function buildUnmappedList(peopleAll) {
+  const unmapped = (peopleAll || []).filter(p => !p.has_birth_point && !p.has_death_point);
+  const section = document.getElementById("unmappedSection");
+  if (!unmapped.length) { section.style.display = "none"; return; }
+  section.style.display = "";
+  document.getElementById("unmappedCount").textContent = `(${unmapped.length})`;
+  unmapped.sort((a, b) => (a.primary_name || "").localeCompare(b.primary_name || ""));
+  const list = document.getElementById("unmappedList");
+  list.innerHTML = unmapped.map(p =>
+    `<div class="unmapped-row" data-pid="${safe(p.person_id)}">
+       <div class="name">${safe(p.primary_name || "Unknown")}</div>
+       <div class="sub">${safe(lifespanText(p.birth_year, p.death_year) || "")}${p.branch ? " · " + safe(p.branch) : ""}</div>
+     </div>`).join("");
+  list.addEventListener("click", e => {
+    const row = e.target.closest(".unmapped-row");
+    if (!row) return;
+    const pid = row.dataset.pid;
+    const person = unmapped.find(x => x.person_id === pid);
+    if (person) {
+      const entry = state.searchIdx.find(x => x.person_id === pid);
+      showUnmappedPopup(entry || { person_id: pid, name: person.primary_name, props: person });
+    }
+  });
+}
+
+function showUnmappedPopup(entry) {
+  const p = entry.props || entry;
+  const merged = {
+    primary_name: p.primary_name || entry.name,
+    sex: p.sex,
+    branch: p.branch,
+    era: p.era,
+    birth_year: p.birth_year,
+    death_year: p.death_year,
+    birth_place_name: p.birth_place_name,
+    death_place_name: p.death_place_name,
+    notes: p.notes,
+    source_summary: p.source_summary,
+    fs_id: p.fs_id,
+  };
+  const html = popupHtml(merged, "person") +
+    `<div class="popup-source" style="margin-top:10px;color:var(--accent);">No map location on record.</div>`;
+  L.popup({ maxWidth: 320, autoClose: true, closeOnClick: true, className: "leaflet-popup-floating" })
+    .setLatLng(map.getCenter())
+    .setContent(html)
+    .openOn(map);
+}
+
+function buildSearchIndex(birthsFC, deathsFC, peopleAll) {
+  const byId = new Map();
+  // Seed from the canonical 1-row-per-person list. Includes unmapped people.
+  (peopleAll || []).forEach(p => {
+    if (!p.person_id) return;
+    byId.set(p.person_id, {
+      person_id: p.person_id,
+      name: p.primary_name || "Unknown",
+      sub: lifespanText(p.birth_year, p.death_year) || p.branch || "",
+      latlng: (p.birth_lat && p.birth_long) ? [p.birth_lat, p.birth_long]
+            : (p.death_lat && p.death_long) ? [p.death_lat, p.death_long]
+            : null,
+      origin: p.has_birth_point ? "birth" : p.has_death_point ? "death" : "unmapped",
+      mapped: !!(p.has_birth_point || p.has_death_point),
+      props: p,
+    });
+  });
+  // Fold geometry from the actual point layers (more accurate than the place_id LEFT JOIN).
+  function refine(fc, preferred) {
+    (fc.features || []).forEach(f => {
+      const props = f.properties || {};
+      if (!props.person_id) return;
+      const cur = byId.get(props.person_id);
+      if (!cur) return;
+      const [lng, lat] = (f.geometry && f.geometry.coordinates) || [null, null];
+      if (preferred === "birth" && lat && lng) {
+        cur.latlng = [lat, lng];
+        cur.origin = "birth";
+        cur.mapped = true;
+      } else if (preferred === "death" && cur.origin !== "birth" && lat && lng) {
+        cur.latlng = [lat, lng];
+        cur.origin = "death";
+        cur.mapped = true;
+      }
+    });
+  }
+  refine(birthsFC, "birth");
+  refine(deathsFC, "death");
+  state.searchIdx = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function wireSearch() {
+  const input = document.getElementById("searchInput");
+  const results = document.getElementById("searchResults");
+  let activeIdx = -1;
+  let lastRendered = [];
+
+  function render(q) {
+    activeIdx = -1;
+    if (!q) { results.classList.remove("open"); results.innerHTML = ""; lastRendered = []; return; }
+    const lc = q.toLowerCase();
+    const matches = state.searchIdx.filter(p => p.name.toLowerCase().includes(lc)).slice(0, 30);
+    lastRendered = matches;
+    if (!matches.length) {
+      results.innerHTML = `<div class="search-row"><div class="sub">No matches.</div></div>`;
+      results.classList.add("open");
+      return;
+    }
+    results.innerHTML = matches.map((p, i) =>
+      `<div class="search-row" data-idx="${i}" role="option">
+         <div class="name">${safe(p.name)}</div>
+         <div class="sub">${safe(p.sub)}</div>
+       </div>`).join("");
+    results.classList.add("open");
+  }
+
+  function pick(p) {
+    if (!p) return;
+    closeSheet();
+    if (!p.mapped) {
+      // Unmapped person — show their info via the popup-style banner instead of flying.
+      showUnmappedPopup(p);
+      input.value = p.name;
+      results.classList.remove("open");
+      return;
+    }
+    // Find the marker we'll open. Prefer the birth point (matches what we'll fly to).
+    let target = null;
+    const order = p.origin === "death" ? ["deaths", "births"] : ["births", "deaths"];
+    for (const key of order) {
+      const layer = state.layers[key];
+      if (!layer) continue;
+      layer.eachLayer(l => {
+        if (target) return;
+        const props = l.feature && l.feature.properties;
+        if (props && props.person_id === p.person_id) target = l;
+      });
+      if (target) break;
+    }
+    const dest = target ? target.getLatLng() : (p.latlng ? L.latLng(p.latlng[0], p.latlng[1]) : null);
+    if (dest) {
+      map.flyTo(dest, Math.max(7, map.getZoom()), { duration: 1.2 });
+      setTimeout(() => target && target.openPopup(), 1250);
+    }
+    input.value = p.name;
+    results.classList.remove("open");
+  }
+
+  input.addEventListener("input", e => render(e.target.value.trim()));
+  input.addEventListener("focus", () => { if (input.value) render(input.value.trim()); });
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); activeIdx = Math.min(lastRendered.length - 1, activeIdx + 1); highlight(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); activeIdx = Math.max(0, activeIdx - 1); highlight(); }
+    else if (e.key === "Enter") { e.preventDefault(); pick(lastRendered[activeIdx] || lastRendered[0]); }
+    else if (e.key === "Escape") { results.classList.remove("open"); input.blur(); }
+  });
+  results.addEventListener("click", e => {
+    const row = e.target.closest(".search-row");
+    if (!row) return;
+    const idx = parseInt(row.dataset.idx, 10);
+    pick(lastRendered[idx]);
+  });
+  function highlight() {
+    [...results.querySelectorAll(".search-row")].forEach((r, i) => r.classList.toggle("active", i === activeIdx));
+  }
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".search-wrap")) results.classList.remove("open");
+  });
+}
+
+function wireModes() {
+  const btns = [...document.querySelectorAll(".mode-btn[data-mode]")];
+  btns.forEach(b => {
+    b.addEventListener("click", () => {
+      state.mode = b.dataset.mode;
+      btns.forEach(o => o.setAttribute("aria-pressed", o === b ? "true" : "false"));
+      applyFilters();
+    });
+  });
+}
+
+
+// ---------------------- Time scrubber ----------------------
+function wireScrubber() {
+  const scrubber = document.getElementById("scrubber");
+  const slider = document.getElementById("yearSlider");
+  const label = document.getElementById("yearLabel");
+  const play = document.getElementById("playBtn");
+  const icon = document.getElementById("playIcon");
+  const toggle = document.getElementById("scrubberToggle");
+  const show = document.getElementById("scrubberShow");
+
+  function setCollapsed(yes) {
+    scrubber.classList.toggle("collapsed", yes);
+    show.classList.toggle("visible", yes);
+    // Map size changes when scrubber hides — let Leaflet recompute
+    setTimeout(() => map.invalidateSize({ animate: false }), 350);
+  }
+  toggle.addEventListener("click", () => setCollapsed(true));
+  show.addEventListener("click", () => setCollapsed(false));
+  // Expose so the tour can auto-collapse on open
+  window._collapseScrubber = setCollapsed;
+
+  function setYear(y) {
+    state.year = y;
+    label.textContent = y;
+    const pct = ((y - +slider.min) / (+slider.max - +slider.min)) * 100;
+    slider.style.setProperty("--pct", pct + "%");
+    applyFilters();
+  }
+  function setRange(min, max) {
+    slider.min = min; slider.max = max;
+    if (state.year < min || state.year > max) {
+      setYear(Math.round((min + max) / 2));
+    } else {
+      slider.value = state.year;
+      setYear(state.year);
     }
   }
-</script>
 
+  slider.addEventListener("input", e => setYear(+e.target.value));
+
+  function tick() {
+    if (!state.isPlaying) return;
+    const next = state.year + 3;
+    if (next > +slider.max) { stop(); return; }
+    slider.value = next;
+    setYear(next);
+  }
+  function start() {
+    state.isPlaying = true;
+    icon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
+    state.playTimer = setInterval(tick, 350);
+  }
+  function stop() {
+    state.isPlaying = false;
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    clearInterval(state.playTimer);
+  }
+  play.addEventListener("click", () => state.isPlaying ? stop() : start());
+
+  setYear(+slider.value);
+  return { setRange, setYear };
+}
+
+// ---------------------- Sheet (mobile bottom sheet / desktop side panel) ----------------------
+function wireSheet() {
+  const sheet = document.getElementById("sheet");
+  const backdrop = document.getElementById("sheetBackdrop");
+  const btn = document.getElementById("filtersBtn");
+
+  function open() {
+    sheet.classList.add("open");
+    backdrop.classList.add("open");
+    document.getElementById("scrubber").classList.remove("no-sheet");
+  }
+  window.closeSheet = function close() {
+    sheet.classList.remove("open");
+    backdrop.classList.remove("open");
+    document.getElementById("scrubber").classList.add("no-sheet");
+  };
+
+  btn.addEventListener("click", () => sheet.classList.contains("open") ? closeSheet() : open());
+  backdrop.addEventListener("click", closeSheet);
+
+  // touch drag on handle to dismiss on mobile
+  const handle = document.getElementById("sheetHandle");
+  let dragY0 = null, sheetH = 0;
+  handle.addEventListener("touchstart", e => {
+    dragY0 = e.touches[0].clientY;
+    sheetH = sheet.getBoundingClientRect().height;
+    sheet.style.transition = "none";
+  }, { passive: true });
+  handle.addEventListener("touchmove", e => {
+    if (dragY0 == null) return;
+    const dy = e.touches[0].clientY - dragY0;
+    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  handle.addEventListener("touchend", e => {
+    sheet.style.transition = "";
+    sheet.style.transform = "";
+    const dy = (e.changedTouches[0].clientY) - dragY0;
+    dragY0 = null;
+    if (dy > sheetH * 0.25) closeSheet();
+  });
+
+  // open by default on first desktop visit
+  if (matchMedia("(min-width: 768px)").matches) {
+    setTimeout(open, 300);
+  } else {
+    document.getElementById("scrubber").classList.add("no-sheet");
+  }
+}
+
+// ---------------------- Tour ----------------------
+// Hand-picked anchor people surfaced in the tour's "Key family" step.
+// Each entry: { id (person_id), why (one-line editorial blurb) }. Missing
+// IDs are skipped silently so the tour stays robust to GPKG edits.
+const KEY_PEOPLE = [
+  { id: "P-0055", why: "Matriarch & dedicatee — this site is for her" },
+  { id: "P-0072", why: "Civil War veteran — 3rd Iowa Cavalry, Co. L" },
+  { id: "P-0078", why: "French-Canadian patriarch (Pouliot line)" },
+  { id: "P-0070", why: "Reed patriarch — Ohio→Iowa migration" },
+  { id: "P-0138", why: "Earliest known Lambert ancestor (b. 1728)" },
+];
+
+const DEVOTION_TEXT =
+  "My grandmother was the matriarch of our family and a devoted student of " +
+  "genealogy. She and I were bound by a shared love of legacy, lineage, and " +
+  "the stories that shape us. In life, she cherished her family deeply, and " +
+  "treasured her place within the long unfolding — the story of our family, " +
+  "and the story of humanity. Let this website stand as a tribute to her " +
+  "devotion, and as a quiet reminder to carry, always, unconditional love " +
+  "for one another.";
+
+function wireTour() {
+  const overlay = document.getElementById("tourOverlay");
+  const stepLabel = document.getElementById("tourStepLabel");
+  const title = document.getElementById("tourTitle");
+  const years = document.getElementById("tourYears");
+  const contextBlocks = document.getElementById("tourContextBlocks");
+  const tallyEl = document.getElementById("tourTally");
+  const dedSection = document.getElementById("tourDedicationSection");
+  const dedText = document.getElementById("tourDedText");
+  const dedImg = document.getElementById("tourDedImg");
+  const dedPortrait = document.querySelector(".tour-portrait");
+  const peopleSection = document.getElementById("tourPeopleSection");
+  const peopleHeading = document.getElementById("tourPeopleHeading");
+  const peopleEl = document.getElementById("tourPeople");
+  const placesSection = document.getElementById("tourPlacesSection");
+  const placesEl = document.getElementById("tourPlaces");
+  const contextSection = document.getElementById("tourContextSection");
+  const exploreSection = document.getElementById("tourExploreSection");
+
+  // Match the standalone-modal portrait fallback behavior
+  if (dedImg) {
+    dedImg.addEventListener("error", () => dedPortrait.classList.add("no-image"));
+    dedImg.addEventListener("load", () => dedPortrait.classList.remove("no-image"));
+    if (dedImg.complete && dedImg.naturalWidth === 0) dedPortrait.classList.add("no-image");
+  }
+
+  function buildSteps() {
+    const steps = [
+      { kind: "dedication" },
+      { kind: "intro" },
+    ];
+    state.tourEras = ERA_ORDER.filter(e => state.manifest && state.manifest.eras.includes(e));
+    state.tourEras.forEach(era => steps.push({ kind: "era", era }));
+    steps.push({ kind: "keyPeople" });
+    steps.push({ kind: "explore" });
+    steps.push({ kind: "outro" });
+    return steps;
+  }
+  let steps = [];
+
+  function open() {
+    steps = buildSteps();
+    state.tourStep = 0;
+    overlay.classList.add("open");
+    render();
+  }
+  function close() {
+    overlay.classList.remove("open");
+    document.body.classList.remove("show-tour-mobile-tip");
+    state.activeEras = new Set(ERA_ORDER);
+    document.querySelectorAll(".era-pill").forEach(p => p.setAttribute("aria-pressed", "true"));
+    const slider = document.getElementById("yearSlider");
+    state.year = +slider.max;
+    slider.value = +slider.max;
+    document.getElementById("yearLabel").textContent = state.year;
+    slider.style.setProperty("--pct", "100%");
+    applyFilters();
+    fitToData();
+  }
+  function next() {
+    if (state.tourStep < steps.length - 1) { state.tourStep++; render(); }
+    else close();
+  }
+  function back() {
+    if (state.tourStep > 0) { state.tourStep--; render(); }
+  }
+
+  function hideAllSections() {
+    dedSection.style.display = "none";
+    peopleSection.style.display = "none";
+    placesSection.style.display = "none";
+    contextSection.style.display = "none";
+    exploreSection.style.display = "none";
+  }
+
+  // Padding for flyTo / flyToBounds so the destination centers in the *visible*
+  // map area — accounting for the tour panel (right side on desktop, bottom
+  // sheet on mobile). Without this, family pins land behind the tour card.
+  function tourViewPadding() {
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (isDesktop) {
+      // Tour card is right: 16px, width: 380px → reserve ~410px on the right
+      return {
+        paddingTopLeft: L.point(20, 80),
+        paddingBottomRight: L.point(410, 110),
+      };
+    }
+    // Mobile: tour card sits at the bottom (~50vh tall + scrubber)
+    const cardH = Math.min(window.innerHeight * 0.5, 460);
+    return {
+      paddingTopLeft: L.point(10, 80),
+      paddingBottomRight: L.point(10, cardH + 100),
+    };
+  }
+
+  // Workaround for a fitBounds/flyToBounds quirk on our custom Albers CRS:
+  // those calls compute the right center but fail to actually apply the zoom.
+  // We instead derive the zoom via getBoundsZoom, shift the center to honor
+  // asymmetric padding, then setView/flyTo directly.
+  function flyToBoundsTour(bounds, opts) {
+    opts = opts || {};
+    const tlPad = opts.paddingTopLeft || L.point(0, 0);
+    const brPad = opts.paddingBottomRight || L.point(0, 0);
+    const totalPad = L.point(tlPad.x + brPad.x, tlPad.y + brPad.y);
+    const maxZoom = opts.maxZoom != null ? opts.maxZoom : map.getMaxZoom();
+    let z = map.getBoundsZoom(bounds, false, totalPad);
+    if (z > maxZoom) z = maxZoom;
+
+    // Shift the geographic center so the bounds land in the *visible* part
+    // of the viewport (excluding padding).
+    const projCenter = map.options.crs.latLngToPoint(bounds.getCenter(), z);
+    const shiftX = (brPad.x - tlPad.x) / 2;
+    const shiftY = (brPad.y - tlPad.y) / 2;
+    const newCenter = map.options.crs.pointToLatLng(
+      L.point(projCenter.x + shiftX, projCenter.y + shiftY), z);
+
+    // Smooth pan when zoom is unchanged; snap-with-fade when zoom changes.
+    // Leaflet's CSS-transform panTo is hardware-accelerated and feels great
+    // when no re-projection is needed. A zoom change requires re-projecting
+    // every SVG path per frame, which was the source of the choppiness.
+    const currentZoom = map.getZoom();
+    const zoomChange = Math.abs(currentZoom - z) > 0.01;
+    if (zoomChange) {
+      flashMap();
+      map.setView(newCenter, z, { animate: false });
+    } else {
+      map.panTo(newCenter, { animate: true, duration: 0.6, easeLinearity: 0.25 });
+    }
+  }
+
+  // Brief fade-flash to soften the instant view change. Avoids touching the
+  // Leaflet animation system (which is broken under our CRS) while still
+  // giving a sense of transition.
+  let _flashTimer = null;
+  function flashMap() {
+    const c = map.getContainer();
+    c.classList.add("map-flash");
+    if (_flashTimer) clearTimeout(_flashTimer);
+    _flashTimer = setTimeout(() => c.classList.remove("map-flash"), 320);
+  }
+
+  function fitToDataTour() {
+    let bounds = null;
+    ["births", "deaths", "lines"].forEach(k => {
+      const layer = state.layers[k];
+      if (!layer || !map.hasLayer(layer)) return;
+      try {
+        const b = layer.getBounds();
+        if (b && b.isValid()) bounds = bounds ? bounds.extend(b) : b;
+      } catch (e) {}
+    });
+    if (bounds && bounds.isValid()) {
+      flyToBoundsTour(bounds, { duration: 1.2, maxZoom: 6, ...tourViewPadding() });
+    }
+  }
+
+  function flyToPersonId(pid, maxZoom = 6) {
+    const entry = state.searchIdx?.find(x => x.person_id === pid);
+    if (!entry || !entry.latlng) return;
+    const pad = tourViewPadding();
+    const latlng = L.latLng(entry.latlng[0], entry.latlng[1]);
+    const tiny = L.latLngBounds(latlng, latlng);
+    flyToBoundsTour(tiny, { duration: 1.2, maxZoom: Math.max(maxZoom, map.getZoom()), ...pad });
+  }
+
+  function personsInEra(era) {
+    return (state.peopleAll || []).filter(p => p.era === era);
+  }
+
+  function topPlacesInEra(era, n = 6) {
+    const counts = new Map();
+    personsInEra(era).forEach(p => {
+      [p.birth_place_name, p.death_place_name].forEach(name => {
+        if (name) counts.set(name, (counts.get(name) || 0) + 1);
+      });
+    });
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([name, count]) => ({ name, count }));
+  }
+
+  function render() {
+    const step = steps[state.tourStep];
+    stepLabel.textContent = `Step ${state.tourStep + 1} of ${steps.length}`;
+    document.getElementById("tourBack").style.visibility = state.tourStep === 0 ? "hidden" : "visible";
+    document.getElementById("tourNextTop").textContent = state.tourStep === steps.length - 1 ? "Done" : "Next →";
+    // "Best on desktop" mobile tip only on the dedication (first) step.
+    document.body.classList.toggle("show-tour-mobile-tip", state.tourStep === 0);
+    // Default: tally visible (dedication step overrides this)
+    tallyEl.style.display = "";
+    // Force Leaflet to refresh its cached container size so flyTo's padding
+    // calculation is accurate. Without this, fly operations can no-op when
+    // sheet/tour panel toggles have changed the visible map area.
+    map.invalidateSize({ animate: false });
+
+    if (step.kind === "dedication") {
+      title.textContent = "In dedication to Leah Rae Mariotti-Reed";
+      years.textContent = "1936 – 2025";
+      tallyEl.innerHTML = "";
+      tallyEl.style.display = "none";
+      hideAllSections();
+      dedSection.style.display = "";
+      dedText.textContent = DEVOTION_TEXT;
+      // Restore full era view + center on Leah Rae if findable.
+      state.activeEras = new Set(ERA_ORDER);
+      document.querySelectorAll(".era-pill").forEach(p => p.setAttribute("aria-pressed", "true"));
+      const slider = document.getElementById("yearSlider");
+      state.year = +slider.max;
+      slider.value = +slider.max;
+      document.getElementById("yearLabel").textContent = state.year;
+      slider.style.setProperty("--pct", "100%");
+      applyFilters();
+      flyToPersonId("P-0055", 5);
+      return;
+    }
+
+    if (step.kind === "intro") {
+      title.textContent = "Across the centuries";
+      years.textContent = `${state.manifest?.year_min ?? 1735} – ${state.manifest?.year_max ?? 2025}`;
+      const personCount = (state.peopleAll || []).length;
+      tallyEl.innerHTML = `<b>${personCount}</b> family members spanning <b>${state.tourEras.length}</b> historical eras. Let's walk through them.`;
+      hideAllSections();
+      fitToDataTour();
+      return;
+    }
+
+    if (step.kind === "keyPeople") {
+      title.textContent = "Key family";
+      years.textContent = "Anchors of the story";
+      tallyEl.innerHTML = `A handful of ancestors who anchor the family story. Tap any name to fly there and read their record.`;
+      hideAllSections();
+      peopleSection.style.display = "";
+      peopleHeading.textContent = "Anchors";
+      const items = KEY_PEOPLE
+        .map(k => {
+          const p = (state.peopleAll || []).find(x => x.person_id === k.id);
+          return p ? { p, why: k.why } : null;
+        })
+        .filter(Boolean);
+      peopleEl.innerHTML = items.map(({ p, why }) => {
+        const span = p.birth_year && p.death_year ? `${p.birth_year}–${p.death_year}`
+                   : p.birth_year ? `b. ${p.birth_year}`
+                   : p.death_year ? `d. ${p.death_year}` : "";
+        return `<button class="tour-person key" data-pid="${safe(p.person_id)}">
+          ${safe(p.primary_name)}<span class="years"> ${safe(span)}</span>
+          <span class="why">${safe(why)}</span>
+        </button>`;
+      }).join("");
+      // Restore full data view
+      state.activeEras = new Set(ERA_ORDER);
+      document.querySelectorAll(".era-pill").forEach(p => p.setAttribute("aria-pressed", "true"));
+      applyFilters();
+      fitToDataTour();
+      return;
+    }
+
+    if (step.kind === "explore") {
+      title.textContent = "How to explore";
+      years.textContent = "The map is yours";
+      tallyEl.innerHTML = `A few ways to dig deeper on your own.`;
+      hideAllSections();
+      exploreSection.style.display = "";
+      return;
+    }
+
+    if (step.kind === "outro") {
+      title.textContent = "End of the tour";
+      years.textContent = "Thank you";
+      tallyEl.innerHTML = `From a stone farm in Bohemia and a fur-trade outpost in New France to the family today — that's the journey on this map. Tap <b>Done</b> to explore on your own.`;
+      hideAllSections();
+      fitToDataTour();
+      return;
+    }
+
+    const era = step.era;
+    title.textContent = era;
+    const [a, b] = ERA_YEARS[era];
+    years.textContent = `${a} – ${b}`;
+
+    // Filter map + scrubber to this era
+    state.activeEras = new Set([era]);
+    document.querySelectorAll(".era-pill").forEach(p => {
+      const txt = p.textContent.trim();
+      p.setAttribute("aria-pressed", txt === era ? "true" : "false");
+    });
+    state.year = Math.round((a + b) / 2);
+    const slider = document.getElementById("yearSlider");
+    slider.value = Math.min(+slider.max, Math.max(+slider.min, state.year));
+    document.getElementById("yearLabel").textContent = state.year;
+    applyFilters();
+
+    // Tally — count ancestors with this canonical era
+    const people = personsInEra(era).sort((x, y) => (x.birth_year || 9999) - (y.birth_year || 9999));
+    const tallyN = people.length;
+    tallyEl.innerHTML = tallyN
+      ? `<b>${tallyN}</b> ancestor${tallyN === 1 ? "" : "s"} came of age in this era.`
+      : `No ancestors in the data with primary years in this era yet.`;
+
+    // People chips
+    if (people.length) {
+      peopleSection.style.display = "";
+      peopleHeading.textContent = "Family in this era";
+      peopleEl.innerHTML = people.map(p => {
+        const span = p.birth_year && p.death_year ? `${p.birth_year}–${p.death_year}`
+                   : p.birth_year ? `b. ${p.birth_year}`
+                   : p.death_year ? `d. ${p.death_year}` : "";
+        return `<button class="tour-person" data-pid="${safe(p.person_id)}">
+          ${safe(p.primary_name || "Unknown")}<span class="years"> ${safe(span)}</span>
+        </button>`;
+      }).join("");
+    } else {
+      peopleSection.style.display = "none";
+    }
+
+    // Places chips
+    const places = topPlacesInEra(era);
+    if (places.length) {
+      placesSection.style.display = "";
+      placesEl.innerHTML = places.map(pl =>
+        `<span class="tour-place" title="${safe(pl.count)} ancestor${pl.count === 1 ? "" : "s"}">
+           ${safe(pl.name)}${pl.count > 1 ? ` <span style="opacity:.6;font-size:10px;">×${pl.count}</span>` : ""}
+         </span>`).join("");
+    } else {
+      placesSection.style.display = "none";
+    }
+
+    // Historical context — dynamic, only for regions the era's ancestors
+    // actually lived in.
+    const ctx = ERA_CONTEXT[era] || {};
+    const regions = detectRegions(people);
+    if (regions.length) {
+      contextSection.style.display = "";
+      contextBlocks.innerHTML = regions
+        .filter(r => ctx[r])
+        .map(r => `<h3 style="margin-top:8px;">${safe(REGION_LABELS[r])}</h3><p>${safe(ctx[r])}</p>`)
+        .join("");
+    } else {
+      contextSection.style.display = "none";
+    }
+
+    // Fly to bounds for this era's pins, padded so they land in the visible
+    // map area (not behind the tour panel).
+    const bds = eraBounds(era);
+    if (bds && bds.isValid()) {
+      flyToBoundsTour(bds, { duration: 1.4, maxZoom: 6, ...tourViewPadding() });
+    }
+  }
+
+  function eraBounds(era) {
+    // Collect every pin in this era
+    const points = [];
+    ["births", "deaths"].forEach(k => {
+      const layer = state.layers[k];
+      if (!layer) return;
+      layer.eachLayer(l => {
+        const p = l.feature && l.feature.properties;
+        if (p && p.era === era) points.push(l.getLatLng());
+      });
+    });
+    if (!points.length) return null;
+
+    // Focus on the *dense cluster*: take the median lat/lng, compute each
+    // point's distance from it, and keep only points within 2× the median
+    // distance. This drops the long-tail outliers (e.g. one Italian ancestor
+    // when most of the era's family lived in Iowa) so the map zooms onto the
+    // area where most of the family actually was.
+    const sortedLats = [...points].map(p => p.lat).sort((a, b) => a - b);
+    const sortedLngs = [...points].map(p => p.lng).sort((a, b) => a - b);
+    const mid = Math.floor(points.length / 2);
+    const medLat = sortedLats[mid];
+    const medLng = sortedLngs[mid];
+
+    const distances = points.map(p => {
+      const dLat = p.lat - medLat;
+      const dLng = p.lng - medLng;
+      return Math.sqrt(dLat * dLat + dLng * dLng);
+    });
+    const sortedDist = [...distances].sort((a, b) => a - b);
+    const medianDist = sortedDist[Math.floor(sortedDist.length / 2)] || 1;
+    const threshold = Math.max(medianDist * 2, 1);  // min 1 degree
+
+    const inliers = points.filter((_, i) => distances[i] <= threshold);
+    const usePoints = inliers.length >= 2 ? inliers : points;
+
+    let bounds = L.latLngBounds(usePoints[0], usePoints[0]);
+    usePoints.forEach(p => bounds.extend(p));
+    return bounds;
+  }
+
+  // Click a person chip → fly to them + open popup, without closing the tour
+  peopleEl.addEventListener("click", e => {
+    const btn = e.target.closest(".tour-person");
+    if (!btn) return;
+    const pid = btn.dataset.pid;
+    const entry = state.searchIdx.find(x => x.person_id === pid);
+    if (!entry) return;
+    if (!entry.mapped) {
+      showUnmappedPopup(entry);
+      return;
+    }
+    // Find the matching marker — prefer the layer matching the person's origin
+    const order = entry.origin === "death" ? ["deaths", "births"] : ["births", "deaths"];
+    let target = null;
+    for (const key of order) {
+      const layer = state.layers[key];
+      if (!layer) continue;
+      layer.eachLayer(l => {
+        if (target) return;
+        const props = l.feature && l.feature.properties;
+        if (props && props.person_id === pid) target = l;
+      });
+      if (target) break;
+    }
+    const dest = target ? target.getLatLng() : (entry.latlng ? L.latLng(entry.latlng[0], entry.latlng[1]) : null);
+    if (dest) {
+      map.flyTo(dest, Math.max(6, map.getZoom()), { duration: 1.0 });
+      setTimeout(() => target && target.openPopup(), 1050);
+    }
+  });
+
+  const TOUR_SEEN_KEY = "lrgdm:tourSeen";
+  const tourBtnEl = document.getElementById("tourBtn");
+
+  function stopTourPulse() {
+    tourBtnEl.classList.remove("pulsing");
+    try { sessionStorage.setItem(TOUR_SEEN_KEY, "1"); } catch (e) {}
+  }
+
+  tourBtnEl.addEventListener("click", () => {
+    stopTourPulse();
+    // Close the filter sheet so the tour card + map take focus.
+    if (window.closeSheet) window.closeSheet();
+    open();
+  });
+
+  // After 5s of idle, gently pulse the Take the Tour chip — unless the user
+  // has already opened it this session.
+  let pulseTimer = null;
+  try {
+    if (!sessionStorage.getItem(TOUR_SEEN_KEY)) {
+      pulseTimer = setTimeout(() => {
+        if (!sessionStorage.getItem(TOUR_SEEN_KEY)) {
+          tourBtnEl.classList.add("pulsing");
+        }
+      }, 5000);
+    }
+  } catch (e) { /* sessionStorage may throw in some private modes */ }
+  document.getElementById("tourNextTop").addEventListener("click", next);
+  document.getElementById("tourBack").addEventListener("click", back);
+  document.getElementById("tourSkip").addEventListener("click", close);
+  // Note: no backdrop-click handler — the tour panel is non-blocking and
+  // the user can interact freely with the map underneath.
+}
+
+// ---------------------- Dedication ----------------------
+function wireDedication() {
+  const overlay = document.getElementById("dedicationOverlay");
+  const btn = document.getElementById("dedicationBtn");
+  const closeBtn = document.getElementById("dedicationClose");
+  const img = document.getElementById("dedicationImg");
+  const portrait = document.querySelector(".dedication-portrait");
+  const sheetPortrait = document.getElementById("sheetPortrait");
+  const sheetPortraitImg = document.getElementById("sheetPortraitImg");
+
+  // Graceful image fallback for all Leah portraits — monogram if not present.
+  function bindFallback(imgEl, portraitEl) {
+    if (!imgEl || !portraitEl) return;
+    imgEl.addEventListener("error", () => portraitEl.classList.add("no-image"));
+    imgEl.addEventListener("load", () => portraitEl.classList.remove("no-image"));
+    if (imgEl.complete && imgEl.naturalWidth === 0) portraitEl.classList.add("no-image");
+  }
+  bindFallback(img, portrait);
+  bindFallback(sheetPortraitImg, sheetPortrait);
+
+  function open() { overlay.classList.add("open"); }
+  function close() { overlay.classList.remove("open"); }
+  btn.addEventListener("click", open);
+  closeBtn.addEventListener("click", close);
+  if (sheetPortrait) sheetPortrait.addEventListener("click", open);
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+}
+
+// ---------------------- Person index ----------------------
+function buildPersonIndex(lines, births, deaths, peopleAll) {
+  const idx = new Map();
+  function upsert(p, extras) {
+    if (!p || !p.person_id) return;
+    const cur = idx.get(p.person_id) || {};
+    idx.set(p.person_id, { ...cur, ...p, ...extras });
+  }
+  // Seed from canonical per-person list (has all 148, including unmapped).
+  (peopleAll || []).forEach(p => upsert(p, {}));
+  (lines.features || []).forEach(f => upsert(f.properties, {
+    birth_place_name: f.properties.birth_name,
+    death_place_name: f.properties.death_name,
+  }));
+  (births.features || []).forEach(f => upsert(f.properties, {
+    birth_place_name: f.properties.place_name || f.properties.birth_place_name,
+  }));
+  (deaths.features || []).forEach(f => upsert(f.properties, {
+    death_place_name: f.properties.place_name || f.properties.death_place_name,
+  }));
+  state.personIndex = idx;
+}
+
+// ---------------------- Boot ----------------------
+function fitToData() {
+  // Intentionally a no-op now. The initial setView lands centered on the
+  // US-Atlantic family corridor; fitting all data would pull in outliers
+  // (Italy, Quebec) and zoom too far out. The tour's own per-step
+  // navigation handles focusing on each era.
+}
+
+async function boot() {
+  const scrubberApi = wireScrubber();
+  wireSheet();
+  wireModes();
+  wireSearch();
+  wireTour();
+  wireDedication();
+  loadBasemap();
+
+  try {
+    const [manifest, lines, births, deaths, people, peopleAllDoc, events, places] = await Promise.all([
+      loadJson(DATA + "manifest.json").catch(() => null),
+      loadJson(DATA + "birth_to_death_lines_eras.geojson"),
+      loadJson(DATA + "birth_location_points.geojson"),
+      loadJson(DATA + "death_location_points.geojson"),
+      loadJson(DATA + "people.geojson"),
+      loadJson(DATA + "people_all.json").catch(() => ({ people: [] })),
+      loadJson(DATA + "events.geojson").catch(() => ({ features: [] })),
+      loadJson(DATA + "places.geojson").catch(() => ({ features: [] })),
+    ]);
+    const peopleAll = (peopleAllDoc && peopleAllDoc.people) || [];
+    state.peopleAll = peopleAll;
+
+    state.manifest = manifest || {};
+    if (state.manifest.year_min && state.manifest.year_max) {
+      // Clamp the upper bound to the latest line death_year for a more meaningful timeline
+      const lineDeaths = (lines.features || []).map(f => f.properties.death_year).filter(Boolean);
+      const upper = lineDeaths.length ? Math.max(...lineDeaths) : state.manifest.year_max;
+      state.year = upper;
+      scrubberApi.setRange(state.manifest.year_min, upper);
+    }
+
+    buildPersonIndex(lines, births, deaths, peopleAll);
+    buildEraPills();
+    buildLegend();
+    buildStats();
+
+    state.geoJson = { lines, births, deaths, people, events, places };
+
+    state.layers.lines  = makeLineLayer(lines);
+    state.layers.births = makePointLayer(births, "birth");
+    state.layers.deaths = makePointLayer(deaths, "death");
+    state.layers.events = makeEventLayer(events);
+    state.layers.places = makePlacesLayer(places);
+
+    buildSearchIndex(births, deaths, peopleAll);
+    buildUnmappedList(peopleAll);
+
+    applyFilters();
+    fitToData();
+
+    document.getElementById("splash").classList.add("hidden");
+    setTimeout(() => { const s = document.getElementById("splash"); s && s.remove(); }, 500);
+  } catch (err) {
+    console.error("Boot failed:", err);
+    document.querySelector("#splash .splash-text").textContent = "Couldn't load the map data. Try refreshing.";
+  }
+}
+
+boot();
+</script>
 </body>
 </html>
-
