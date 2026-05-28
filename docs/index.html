@@ -514,8 +514,14 @@
       display: none;
       pointer-events: none;  /* container ignores clicks; only card receives */
       animation: fade-in .25s ease;
+      transition: bottom .3s cubic-bezier(.22,.61,.36,1);
     }
     .tour-overlay.open { display: block; }
+    /* When the user hides the scrubber, drop the tour panel down to claim
+       that vertical space — more reading room on phones. */
+    body.scrubber-collapsed .tour-overlay {
+      bottom: calc(50px + var(--safe-bottom));
+    }
     .tour-card {
       pointer-events: auto;
       width: 100%;
@@ -1731,6 +1737,7 @@ function wireScrubber() {
   function setCollapsed(yes) {
     scrubber.classList.toggle("collapsed", yes);
     show.classList.toggle("visible", yes);
+    document.body.classList.toggle("scrubber-collapsed", yes);
     // Map size changes when scrubber hides — let Leaflet recompute
     setTimeout(() => map.invalidateSize({ animate: false }), 350);
   }
