@@ -400,6 +400,63 @@
       text-decoration: none; font: 600 12px/1 inherit;
     }
     .popup-link:hover { background: #6e3a21; }
+    .popup-link + .popup-link { margin-left: 6px; }
+    .popup-link-fs { background: var(--ink-dim); }
+    .popup-link-fs:hover { background: var(--ink); }
+
+    /* Narrative overlay — opens from "Read full narrative" popup links.
+       Covers ~90% of viewport; fades + scales in; dismissed by close button,
+       ESC, or backdrop click. */
+    .narrative-overlay {
+      position: fixed; inset: 0; z-index: 1100;
+      background: rgba(31, 27, 22, 0.55);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 5vh 5vw;
+      opacity: 0;
+      transition: opacity .28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .narrative-overlay.visible { opacity: 1; }
+    .narrative-overlay:not([hidden]) { display: flex; }
+    .narrative-card {
+      position: relative;
+      width: 100%; height: 100%;
+      max-width: 1100px;
+      background: var(--bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lift);
+      overflow: hidden;
+      transform: scale(0.96) translateY(12px);
+      opacity: 0;
+      transition: transform .34s cubic-bezier(0.16, 1, 0.3, 1), opacity .24s ease-out;
+    }
+    .narrative-overlay.visible .narrative-card {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+    .narrative-card iframe {
+      width: 100%; height: 100%;
+      border: 0; display: block; background: var(--bg);
+    }
+    .narrative-close {
+      position: absolute; top: 14px; right: 14px; z-index: 2;
+      width: 38px; height: 38px;
+      border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255,255,255,0.94); color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 14px rgba(31,27,22,0.22);
+      transition: background .15s ease, transform .15s ease;
+    }
+    .narrative-close:hover { background: #fff; transform: scale(1.08); }
+    .narrative-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .narrative-close svg { width: 18px; height: 18px; }
+    body.narrative-open { overflow: hidden; }
+    @media (max-width: 600px) {
+      .narrative-overlay { padding: 3vh 2vw; }
+      .narrative-card { border-radius: 12px; }
+      .narrative-close { top: 10px; right: 10px; width: 34px; height: 34px; }
+    }
 
     /* Centered modal overlay (used by the Dedication modal). Separate from
        the non-blocking tour panel so it gets a proper dim backdrop and the
@@ -1354,8 +1411,15 @@ function popupHtml(person, kind) {
   }
   if (person.source_summary) html += `<div class="popup-source">Source: ${safe(person.source_summary)}</div>`;
 
+  const narrative = person.person_id && state.narratives && state.narratives[person.person_id];
+  if (narrative) {
+    html += `<a class="popup-link popup-link-narrative" target="_blank" rel="noopener noreferrer" href="${safe(narrative.url)}">
+      Read full narrative <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+    </a>`;
+  }
+
   if (person.fs_id) {
-    html += `<a class="popup-link" target="_blank" rel="noopener noreferrer" href="https://www.familysearch.org/tree/person/details/${encodeURIComponent(person.fs_id)}">
+    html += `<a class="popup-link popup-link-fs" target="_blank" rel="noopener noreferrer" href="https://www.familysearch.org/tree/person/details/${encodeURIComponent(person.fs_id)}">
       View on FamilySearch <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
     </a>`;
   }
@@ -2385,7 +2449,7 @@ async function boot() {
   loadBasemap();
 
   try {
-    const [manifest, lines, births, deaths, people, peopleAllDoc, events, places] = await Promise.all([
+    const [manifest, lines, births, deaths, people, peopleAllDoc, events, places, narrativesIndex] = await Promise.all([
       loadJson(DATA + "manifest.json").catch(() => null),
       loadJson(DATA + "birth_to_death_lines_eras.geojson"),
       loadJson(DATA + "birth_location_points.geojson"),
@@ -2394,9 +2458,11 @@ async function boot() {
       loadJson(DATA + "people_all.json").catch(() => ({ people: [] })),
       loadJson(DATA + "events.geojson").catch(() => ({ features: [] })),
       loadJson(DATA + "places.geojson").catch(() => ({ features: [] })),
+      loadJson(DATA + "narratives_index.json").catch(() => ({})),
     ]);
     const peopleAll = (peopleAllDoc && peopleAllDoc.people) || [];
     state.peopleAll = peopleAll;
+    state.narratives = narrativesIndex || {};
 
     state.manifest = manifest || {};
     if (state.manifest.year_min && state.manifest.year_max) {
@@ -2435,6 +2501,67 @@ async function boot() {
 }
 
 boot();
+
+// Narrative overlay — intercept "Read full narrative" popup links and open
+// the narrative HTML in an in-place modal instead of a new tab.
+// Wait for DOMContentLoaded because the modal div lives after this script tag.
+document.addEventListener("DOMContentLoaded", () => {
+  const overlay = document.getElementById("narrativeOverlay");
+  const frame = document.getElementById("narrativeFrame");
+  if (!overlay || !frame) return;
+  const closeBtn = overlay.querySelector(".narrative-close");
+  let lastFocus = null;
+
+  function openNarrative(url) {
+    lastFocus = document.activeElement;
+    overlay.hidden = false;
+    document.body.classList.add("narrative-open");
+    frame.src = url;
+    void overlay.offsetWidth;
+    overlay.classList.add("visible");
+    closeBtn.focus({ preventScroll: true });
+  }
+
+  function closeNarrative() {
+    if (!overlay.classList.contains("visible")) return;
+    overlay.classList.remove("visible");
+    document.body.classList.remove("narrative-open");
+    const onEnd = (e) => {
+      if (e.target !== overlay || e.propertyName !== "opacity") return;
+      overlay.removeEventListener("transitionend", onEnd);
+      overlay.hidden = true;
+      frame.src = "about:blank";
+      if (lastFocus && typeof lastFocus.focus === "function") {
+        try { lastFocus.focus({ preventScroll: true }); } catch (_) {}
+      }
+    };
+    overlay.addEventListener("transitionend", onEnd);
+  }
+
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest(".popup-link-narrative");
+    if (link) {
+      e.preventDefault();
+      openNarrative(link.href);
+      return;
+    }
+    if (e.target === overlay) closeNarrative();
+  });
+
+  closeBtn.addEventListener("click", closeNarrative);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("visible")) closeNarrative();
+  });
+});
 </script>
+
+<div id="narrativeOverlay" class="narrative-overlay" role="dialog" aria-modal="true" aria-label="Narrative" hidden>
+  <div class="narrative-card">
+    <button type="button" class="narrative-close" aria-label="Close narrative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
+    <iframe id="narrativeFrame" title="Narrative" src="about:blank"></iframe>
+  </div>
+</div>
 </body>
 </html>

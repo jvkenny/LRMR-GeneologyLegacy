@@ -35,15 +35,19 @@ jobs:
         run: |
           python3 scripts/export_geojson.py
 
+      - name: Generate narrative pages from deep-dive dossiers
+        run: |
+          python3 scripts/generate_narratives.py
+
       - name: Commit changes
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          if [ -n "$(git status --porcelain docs/data)" ]; then
-            git add docs/data
-            git commit -m "Auto-export GeoJSON from GPKG"
+          if [ -n "$(git status --porcelain docs/data docs/narratives)" ]; then
+            git add docs/data docs/narratives
+            git commit -m "Auto-export GeoJSON + narrative pages from GPKG"
             git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
           else
             echo "No changes to commit"
