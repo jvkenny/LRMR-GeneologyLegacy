@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-29T00:15:49+00:00",
+  "generated_at": "2026-05-29T02:55:28+00:00",
   "proband_fs_id": "L274-KNT",
   "year_min": 1710,
   "year_max": 2025,
@@ -23,7 +23,7 @@
     "Paternal Reed by marriage",
     "Paternal Kenny"
   ],
-  "person_count": 147,
-  "place_count": 189,
-  "event_count": 193
+  "person_count": 145,
+  "place_count": 197,
+  "event_count": 208
 }
