@@ -1,7 +1,7 @@
 # LRGDM Validation — 2026-05-28
 
 - GPKG: `src/data/lrgdm.gpkg`
-- Total findings: **70**
+- Total findings: **86**
 
 ## Summary
 
@@ -13,8 +13,8 @@
 | People — fs_id linked to multiple rows | 0 |
 | Places — coordinate problems | 0 |
 | Places — low/missing geocode_quality | 0 |
-| Places — not referenced by any person or event | 12 |
-| Events — missing place_id or PID_People | 46 |
+| Places — not referenced by any person or event | 13 |
+| Events — missing place_id or PID_People | 61 |
 | Events — broken foreign keys | 9 |
 | Events — date_start after date_end | 0 |
 | Relationships — broken foreign keys | 0 |
@@ -41,7 +41,8 @@
 - `PL-0152` (Greene, Pennsylvania, United States) not referenced by any Person or Event
 - `PL-0153` (Caldwell, Noble, Ohio, United States) not referenced by any Person or Event
 - `PL-0154` (Caldwell, Noble, Ohio, United States) not referenced by any Person or Event
-- `PL-0368` (Falls City, Lincoln, Idaho, United States) not referenced by any Person or Event
+- `PL-0220` (Seely Township, Guthrie, Iowa, United States) not referenced by any Person or Event
+- `PL-5242` (Genoa, Liguria, Italy) not referenced by any Person or Event
 
 ## Events — missing place_id or PID_People
 
@@ -91,6 +92,21 @@
 - `E-0191` (residence) has no place_id
 - `E-0192` (1854 & 1856 Iowa State Census — Canton Twp, Benton Co, IA) has no PID_People
 - `E-0193` (Wilson's Raid — Action at Maplesville, AL (Co. L, 3rd Iowa Cavalry)) has no PID_People
+- `E-0196` (Burial of John Foulk Reed) has no PID_People
+- `E-0197` (Burial of Earl Wayne Reed Sr) has no PID_People
+- `E-0198` (Marriage of Clarence D. Eichinger and Estella G. Reed) has no PID_People
+- `E-0199` (1900 US Census — Valley Twp, Guthrie Center, Guthrie Co, Iowa) has no PID_People
+- `E-0200` (1925 Iowa State Census — Waterloo (4th Ward), Black Hawk Co) has no PID_People
+- `E-0201` (Birth of Ugo Mariotti — Cintolese, Tuscany) has no PID_People
+- `E-0202` (Immigration — SS Giuseppe Verdi, Genoa → Ellis Island) has no PID_People
+- `E-0203` (Marriage of Ugo Mariotti and Lena M. Dini — Lenox, Iowa) has no PID_People
+- `E-0204` (Naturalization — Northern District of Illinois) has no PID_People
+- `E-0205` (1930 US Census — Bedford, Taylor Co, Iowa) has no PID_People
+- `E-0206` (1940 US Census — Bedford Twp, Taylor Co, Iowa) has no PID_People
+- `E-0207` (WWII Draft Registration (3rd Registration) — Bedford, IA) has no PID_People
+- `E-0208` (1950 US Census — Bedford Twp, Taylor Co, Iowa) has no PID_People
+- `E-0209` (Death of Ugo Mariotti — Cicero, Illinois) has no PID_People
+- `E-0210` (Burial of Ugo Mariotti — Queen of Heaven, Hillside, IL) has no PID_People
 
 ## Events — broken foreign keys
 

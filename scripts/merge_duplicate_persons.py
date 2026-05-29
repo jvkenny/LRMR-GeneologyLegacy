@@ -57,6 +57,16 @@ MERGES = [
     # PL-0016 and PL-0158 are both Chicago variants (verified 2026-05-27),
     # so this merge is safe.
     {"loser": "P-0022", "winner": "P-0068", "label": "Beatrice Delina Pouliot"},
+    # Surfaced by lrgdm-deep-dive-audit on P-0072 (2026-05-28). P-0009 is the
+    # original GPKG row (no fs_id, wrong death year 1868); P-0084 is the
+    # fs-linked row (fs_id L7XP-Y6P, correct dates 17 Jan 1790 – 15 Dec 1865).
+    {"loser": "P-0009", "winner": "P-0084", "label": "David Lambert"},
+    # Surfaced by lrgdm-deep-dive on P-0036 (2026-05-28 PM). REVERSE of the
+    # usual pattern: both rows carry fs_id LMWG-K6F after the deep-dive apply
+    # added it to P-0036. P-0036 is the curated row (ISO dates, 4
+    # Relationships, 5+9 Event ties); P-0063 was the FS-extract stub with
+    # zero downstream references. Winner = the curated row, loser = the stub.
+    {"loser": "P-0063", "winner": "P-0036", "label": "Estelle Gertrude Lambert"},
 ]
 
 
