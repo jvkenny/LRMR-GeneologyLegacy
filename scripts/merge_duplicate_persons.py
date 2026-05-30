@@ -27,7 +27,9 @@ Use --dry-run (default) to plan, --apply to commit.
 from __future__ import annotations
 
 import argparse
-import sqlite3
+from psycopg.rows import tuple_row
+
+from lrgdm_db import connect
 import sys
 from pathlib import Path
 
@@ -101,40 +103,19 @@ def _prefer_resolvable_place(cur, winner_v, loser_v):
     """Return the better place_id, preferring one that resolves in Places."""
     if not winner_v:
         return loser_v
-    n = cur.execute("SELECT COUNT(*) FROM Places WHERE place_id=?", (winner_v,)).fetchone()[0]
+    n = cur.execute("SELECT COUNT(*) FROM place WHERE place_id=%s", (winner_v,)).fetchone()[0]
     if n == 0 and loser_v:
-        nl = cur.execute("SELECT COUNT(*) FROM Places WHERE place_id=?", (loser_v,)).fetchone()[0]
+        nl = cur.execute("SELECT COUNT(*) FROM place WHERE place_id=%s", (loser_v,)).fetchone()[0]
         if nl > 0:
             return loser_v
     return winner_v
-
-
-def _capture_and_drop_triggers(cur, tables):
-    captured = []
-    for t in tables:
-        for n, s in cur.execute(
-            "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?", (t,),
-        ):
-            captured.append((n, s))
-    for n, _ in captured:
-        cur.execute(f'DROP TRIGGER IF EXISTS "{n}"')
-    return captured
-
-
-def _recreate(cur, captured):
-    for _, sql in captured:
-        if sql:
-            cur.execute(sql)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
-    if not GPKG.exists():
-        print(f"GPKG not found: {GPKG}", file=sys.stderr)
-        return 1
-    conn = sqlite3.connect(GPKG)
+    conn = connect(row_factory=tuple_row)
     cur = conn.cursor()
 
     plans = []  # cache merged values to reuse during --apply
@@ -143,13 +124,13 @@ def main() -> int:
         l = cur.execute(
             "SELECT person_id, primary_name, notes, source_summary, birth_date, death_date, "
             "       birth_place_id, death_place_id "
-            "FROM People WHERE person_id=?",
+            "FROM person WHERE person_id=%s",
             (loser,),
         ).fetchone()
         w = cur.execute(
             "SELECT person_id, primary_name, notes, source_summary, birth_date, death_date, "
             "       birth_place_id, death_place_id, fs_id "
-            "FROM People WHERE person_id=?",
+            "FROM person WHERE person_id=%s",
             (winner,),
         ).fetchone()
         if not l or not w:
@@ -164,10 +145,9 @@ def main() -> int:
             "birth_place_id":  _prefer_resolvable_place(cur, w[6], l[6]),
             "death_place_id":  _prefer_resolvable_place(cur, w[7], l[7]),
         }
-        ev_refs = cur.execute("SELECT COUNT(*) FROM Events WHERE PID_People=?", (loser,)).fetchone()[0]
-        ep_refs = cur.execute("SELECT COUNT(*) FROM EventParticipants WHERE person_id=?", (loser,)).fetchone()[0]
+        ep_refs = cur.execute("SELECT COUNT(*) FROM event_participant WHERE person_id=%s", (loser,)).fetchone()[0]
         rel_refs = cur.execute(
-            "SELECT COUNT(*) FROM Relationships WHERE person_id_a=? OR person_id_b=?", (loser, loser),
+            "SELECT COUNT(*) FROM relationship WHERE person_id_a=%s OR person_id_b=%s", (loser, loser),
         ).fetchone()[0]
         print(f"\n== Merge: {m['label']} ==")
         print(f"  loser  {l[0]}: notes={l[2]!r}")
@@ -175,7 +155,7 @@ def main() -> int:
         print(f"  winner {w[0]} (fs_id={w[8]!r})")
         print(f"               notes={w[2]!r}")
         print(f"               source={w[3]!r} birth_date={w[4]!r} birth_pl={w[6]}")
-        print(f"  → repoint: Events={ev_refs}, EventParticipants={ep_refs}, Relationships={rel_refs}")
+        print(f"  → repoint: event_participant={ep_refs}, relationship={rel_refs}")
         print(f"  → set winner.notes={merged['notes']!r}")
         print(f"  → set winner.source_summary={merged['source_summary']!r}")
         if merged['birth_date'] != w[4]:
@@ -192,16 +172,27 @@ def main() -> int:
         print("\n(dry-run) pass --apply to commit.")
         return 0
 
-    saved = _capture_and_drop_triggers(cur, ["People", "Events"])
     for m, merged in zip(MERGES, plans):
         if merged is None:
             continue
         loser, winner = m["loser"], m["winner"]
+        # Repoint the loser's references to the winner first (FKs are enforced),
+        # then delete the loser. ON CONFLICT guards the participant unique index.
         cur.execute(
-            "UPDATE People SET "
-            "  notes = ?, source_summary = ?, birth_date = ?, death_date = ?, "
-            "  birth_place_id = ?, death_place_id = ? "
-            "WHERE person_id = ?",
+            "UPDATE event_participant SET person_id=%s WHERE person_id=%s "
+            "AND NOT EXISTS (SELECT 1 FROM event_participant e2 "
+            "  WHERE e2.event_id=event_participant.event_id AND e2.person_id=%s "
+            "  AND e2.role IS NOT DISTINCT FROM event_participant.role)",
+            (winner, loser, winner),
+        )
+        cur.execute("DELETE FROM event_participant WHERE person_id=%s", (loser,))
+        cur.execute("UPDATE relationship SET person_id_a=%s WHERE person_id_a=%s", (winner, loser))
+        cur.execute("UPDATE relationship SET person_id_b=%s WHERE person_id_b=%s", (winner, loser))
+        cur.execute(
+            "UPDATE person SET "
+            "  notes = %s, source_summary = %s, birth_date = %s, death_date = %s, "
+            "  birth_place_id = %s, death_place_id = %s "
+            "WHERE person_id = %s",
             (
                 merged["notes"], merged["source_summary"],
                 merged["birth_date"], merged["death_date"],
@@ -209,16 +200,11 @@ def main() -> int:
                 winner,
             ),
         )
-        cur.execute("UPDATE Events SET PID_People=? WHERE PID_People=?", (winner, loser))
-        cur.execute("UPDATE EventParticipants SET person_id=? WHERE person_id=?", (winner, loser))
-        cur.execute("UPDATE Relationships SET person_id_a=? WHERE person_id_a=?", (winner, loser))
-        cur.execute("UPDATE Relationships SET person_id_b=? WHERE person_id_b=?", (winner, loser))
-        cur.execute("DELETE FROM People WHERE person_id=?", (loser,))
-    _recreate(cur, saved)
+        cur.execute("DELETE FROM person WHERE person_id=%s", (loser,))
 
     # Also set the still-missing branch on P-0037 (Maternal Reed lineage via Karen Reed)
     cur.execute(
-        "UPDATE People SET branch='Maternal Reed' WHERE person_id='P-0037' AND (branch IS NULL OR branch='')"
+        "UPDATE person SET branch='Maternal Reed' WHERE person_id='P-0037' AND (branch IS NULL OR branch='')"
     )
 
     conn.commit()

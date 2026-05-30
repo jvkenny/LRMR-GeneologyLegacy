@@ -19,16 +19,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sqlite3
-import struct
-import subprocess
 import sys
 import unicodedata
 from datetime import date
 from pathlib import Path
 
+from lrgdm_db import connect
+
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 EXTRACT_DIR = REPO / "src/data/familysearch"
 
 # Surname -> branch. Matches existing GPKG conventions (which are inconsistent
@@ -117,13 +115,6 @@ def infer_branch(name: str | None) -> str | None:
     return SURNAME_BRANCH_MAP.get(s)
 
 
-def make_point_gpkg_wkb(x: float, y: float, srs_id: int = 4326) -> bytes:
-    """GPKG-flavored WKB for a POINT."""
-    flags = 0x01
-    header = b"GP" + bytes([0, flags]) + struct.pack("<i", srs_id)
-    # WKB: little-endian, type=1 (Point), then x,y
-    wkb = struct.pack("<BI", 1, 1) + struct.pack("<dd", x, y)
-    return header + wkb
 
 
 def infer_place_quality(name: str) -> str:
@@ -151,10 +142,10 @@ def infer_place_quality(name: str) -> str:
 
 
 def next_id(conn: sqlite3.Connection, table: str, col: str, prefix: str, width: int = 4) -> int:
-    rows = list(conn.execute(f"SELECT {col} FROM {table} WHERE {col} LIKE ?", (f"{prefix}%",)))
+    rows = list(conn.execute(f"SELECT {col} AS v FROM {table} WHERE {col} LIKE %s", (f"{prefix}%",)))
     nums = []
     for r in rows:
-        m = re.match(rf"{re.escape(prefix)}(\d+)$", r[0] or "")
+        m = re.match(rf"{re.escape(prefix)}(\d+)$", r["v"] or "")
         if m:
             nums.append(int(m.group(1)))
     return (max(nums) + 1) if nums else 1
@@ -203,27 +194,23 @@ def main() -> int:
                     help="also ingest living people (default: skip; privacy)")
     args = ap.parse_args()
 
-    if not GPKG.exists():
-        sys.exit(f"GPKG not found: {GPKG}")
-
     extract = load_extract()
-    conn = sqlite3.connect(GPKG)
-    conn.row_factory = sqlite3.Row
+    conn = connect()
 
     # Existing identity
     existing_fs = {
-        r[0] for r in conn.execute(
-            "SELECT fs_id FROM People WHERE fs_id IS NOT NULL AND fs_id != ''"
+        r["fs_id"] for r in conn.execute(
+            "SELECT fs_id FROM person WHERE fs_id IS NOT NULL AND fs_id != ''"
         )
     }
     existing_places = {
         normalize_place(r["name"]): r["place_id"]
-        for r in conn.execute("SELECT place_id, name FROM Places")
+        for r in conn.execute("SELECT place_id, name FROM place")
         if r["name"]
     }
 
-    next_p = next_id(conn, "People", "person_id", "P-")
-    next_pl = next_id(conn, "Places", "place_id", "PL-")
+    next_p = next_id(conn, "person", "person_id", "P-")
+    next_pl = next_id(conn, "place", "place_id", "PL-")
 
     # Plan ingest
     plan_people: list[dict] = []
@@ -376,65 +363,32 @@ def main() -> int:
 
     # ---- apply ----
     cur = conn.cursor()
-    saved_p = _capture_and_drop_triggers(cur, ["Places"])
-    saved_pp = _capture_and_drop_triggers(cur, ["People"])
-    saved_e = _capture_and_drop_triggers(cur, ["Events"])
 
-    # Places first (so People FKs resolve)
+    # Places first (so person FKs resolve); geom built via PostGIS.
     for pl in plan_places.values():
-        wkb = make_point_gpkg_wkb(float(pl["lon"]), float(pl["lat"]))
         q = infer_place_quality(pl["name"])
         cur.execute(
-            'INSERT INTO Places (geom, place_id, name, std_name, lat, long, geocode_quality, notes) '
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (wkb, pl["place_id"], pl["name"], pl["name"], float(pl["lat"]), float(pl["lon"]),
+            "INSERT INTO place (place_id, name, std_name, geom, geocode_quality, notes) "
+            "VALUES (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s)",
+            (pl["place_id"], pl["name"], pl["name"], float(pl["lon"]), float(pl["lat"]),
              q, f"Imported from FS extract {today}"),
         )
-    # rebuild rtree entries we'd otherwise miss
-    for pl in plan_places.values():
-        fid_row = cur.execute(
-            "SELECT fid FROM Places WHERE place_id=?", (pl["place_id"],)
-        ).fetchone()
-        if fid_row:
-            lat = float(pl["lat"])
-            lon = float(pl["lon"])
-            cur.execute(
-                "INSERT OR REPLACE INTO rtree_Places_geom (id, minx, maxx, miny, maxy) VALUES (?, ?, ?, ?, ?)",
-                (fid_row[0], lon, lon, lat, lat),
-            )
 
     # People
     for p in plan_people:
         cur.execute(
-            'INSERT INTO People (person_id, primary_name, sex, birth_date, birth_place_id, '
-            ' death_date, death_place_id, life_confidence, privacy_level, branch, notes, '
-            ' source_summary, fs_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            "INSERT INTO person (person_id, primary_name, sex, birth_date, birth_place_id, "
+            " death_date, death_place_id, life_confidence, privacy_level, branch, notes, "
+            " source_summary, fs_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             (p["person_id"], p["primary_name"], p["sex"], p["birth_date"], p["birth_place_id"],
              p["death_date"], p["death_place_id"], p["life_confidence"], p["privacy_level"],
              p["branch"], p["notes"], p["source_summary"], p["fs_id"]),
         )
 
-    # update gpkg_ogr_contents.feature_count for Places (People is not a feature table)
-    new_count = cur.execute("SELECT COUNT(*) FROM Places").fetchone()[0]
-    cur.execute(
-        "UPDATE gpkg_ogr_contents SET feature_count = ? WHERE table_name = 'Places'",
-        (new_count,),
-    )
-
-    _recreate(cur, saved_p)
-    _recreate(cur, saved_pp)
-    _recreate(cur, saved_e)
-
     conn.commit()
     conn.close()
 
-    # Regenerate derived spatial layers
-    print("\nRegenerating derived spatial layers...")
-    subprocess.run([
-        sys.executable, str(REPO / "scripts/cleanup_model.py"),
-        "--apply", "--skip-stage-b", "--skip-stage-d", "--skip-stage-e",
-    ], check=True)
-
+    # Derived map layers are live views — no rebuild step.
     print("\nDone. Inserted:")
     print(f"  People: {len(plan_people)}")
     print(f"  Places: {len(plan_places)}")

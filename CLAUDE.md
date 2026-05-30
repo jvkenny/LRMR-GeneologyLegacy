@@ -3,11 +3,10 @@
 This file orients a fresh Claude Code session to the repo. It's the answer to
 "what is this thing, what's the data model, and what should I do here."
 
-> **Architecture changed 2026-05-30.** The source of truth is now a
-> **Postgres/PostGIS database (`lrgdm`)**, not the GeoPackage. The GPKG
-> (`src/data/lrgdm.gpkg`) is a **frozen historical artifact**. Several
-> write-path scripts and skills still target the GPKG and are **pending
-> migration** — see [Migration status](#migration-status) before running them.
+> **This repo is Postgres-first.** The source of truth is the **Postgres/PostGIS
+> database `lrgdm`** (migrated 2026-05-30). Every script reads and writes
+> Postgres. The legacy GeoPackage is a frozen pre-migration snapshot under
+> `backup_gpkg/` — kept for history, never the live data.
 
 ## What this repo is
 
@@ -22,7 +21,7 @@ viewer published via GitHub Pages.
 - **Viewer:** `docs/index.html` (Leaflet, GH Pages), fed by `docs/data/*.geojson`
 - **Proband:** John Kenny, FamilySearch PID **L274-KNT** (b. 1995)
 - **QGIS project:** `~/dev/bwca-trip-2026/qgis/project/LRGDM.qgz` — connect it to the `lrgdm` Postgres connection
-- **Frozen mirror:** `src/data/lrgdm.gpkg` (Git LFS) — no longer the truth; kept for history
+- **Legacy snapshot:** `backup_gpkg/lrgdm-legacy-2026-05-30.gpkg` (Git LFS) — frozen pre-migration GeoPackage; never the live data
 
 ## Data model (Postgres)
 
@@ -75,58 +74,51 @@ with `--break-system-packages` or a venv). Conninfo via `$LRGDM_PG` (default
 
 ## Scripts (`scripts/`)
 
-| Script | Purpose | Backend |
-|---|---|---|
-| `export_geojson.py` | Postgres → `docs/data/*.geojson` (+ manifest, people_all). | **Postgres** ✅ |
-| `generate_narratives.py` | Dossiers + Postgres → `docs/narratives/*.html` + index. | **Postgres** ✅ |
-| `build_site.sh` | Runs both of the above. | **Postgres** ✅ |
-| `add_media.py` | Add a scan/photo, record + link it (`media`/`media_link`). | **Postgres** ✅ |
-| `parse_dossiers.py` | Dossiers → `source`/`citation`/`narrative`/`research_lead`. | **Postgres** ✅ |
-| `validate_gpkg.py` | DQ checks on the GPKG. | GPKG (stale) |
-| `apply_deep_dive.py` | Apply a deep-dive dossier's patches. | **GPKG — pending** ⚠️ |
-| `fix_validation.py` | Safe DQ fixes. | **GPKG — pending** ⚠️ |
-| `cleanup_model.py` | Rebuild derived GPKG layers / schema. | GPKG — **obsolete** (views now) |
-| `merge_duplicate_persons.py` | Merge duplicate persons. | **GPKG — pending** ⚠️ |
-| `ingest_familysearch.py` | Ingest FS extract. | **GPKG — pending** ⚠️ |
-| `reconcile_familysearch.py` | Propose fs_id matches (read-only). | GPKG |
-| `next_mining_batch.py` | Pick ancestors to web-mine. | GPKG |
+All scripts connect through `scripts/lrgdm_db.py` (`$LRGDM_PG`, default
+`dbname=lrgdm`). Every one reads/writes **Postgres**. Writers default to
+dry-run; pass `--apply` to commit. Run `scripts/backup_db.sh` first for a
+`pg_dump` snapshot.
 
-## Migration status
+| Script | Purpose |
+|---|---|
+| `export_geojson.py` | Postgres → `docs/data/*.geojson` (+ manifest, people_all). |
+| `generate_narratives.py` | Dossiers + Postgres → `docs/narratives/*.html` + index. |
+| `build_site.sh` | Runs both of the above (local site rebuild). |
+| `add_media.py` | Add a scan/photo, record + link it (`media`/`media_link`). |
+| `parse_dossiers.py` | Dossiers → `source`/`citation`/`narrative`/`research_lead`. |
+| `apply_deep_dive.py` | Apply a deep-dive dossier's patches, then backfill provenance via `parse_dossiers`. |
+| `ingest_familysearch.py` | Ingest a FamilySearch extract (new `person`/`place` rows). |
+| `reconcile_familysearch.py` | Propose `fs_id` matches from an FS extract (read-only). |
+| `auto_geocode.py` | Geocode places + fill person birth/death place refs from the FS extract. |
+| `auto_branch.py` | Assign `branch` from FS lineage + Relationships. |
+| `fix_validation.py` | Safe DQ fixes (geocode_quality, branch backfill). |
+| `merge_duplicate_persons.py` | Merge duplicate `person` rows (repoint refs, delete loser). |
+| `validate_gpkg.py` | DQ checks → `reports/validation_<DATE>.md` (read-only). Name kept for back-compat; reads Postgres. |
+| `next_mining_batch.py` | Pick deceased ancestors to web-mine (read-only). |
+| `backup_db.sh` | `pg_dump` snapshot → `db/backups/`. |
 
-**Done (Postgres is the source of truth):** schema (`db/migrations/0001-0006`),
-GPKG→PG ETL (`load_from_gpkg.sql`), read path + site build
-(`export_geojson.py`, `generate_narratives.py`, `build_site.sh`), media
-(`add_media.py`), provenance backfill (`parse_dossiers.py`), `pg_dump` backups.
+Note: the `lrgdm-deep-dive` / `lrgdm-data-quality` / `lrgdm-ingest-fs` /
+`lrgdm-pedigree-walk` **skills** invoke these (now Postgres) scripts. The
+SKILL.md prose may still mention GPKG/`.bak` conventions — the scripts do the
+right thing; treat the prose as advisory until those docs are refreshed.
 
-**Pending — these still write the FROZEN GPKG and will NOT touch the live DB.
-Repoint them to Postgres before using on real data:**
-- `apply_deep_dive.py` (the `lrgdm-deep-dive` skill's writer)
-- `fix_validation.py`, `merge_duplicate_persons.py` (the `lrgdm-data-quality` skill)
-- `ingest_familysearch.py` (the `lrgdm-ingest-fs` skill), the `lrgdm-pedigree-walk` flow
-- The **weekly cloud routine** (below) runs validate/mine against the committed
-  GPKG — now inconsistent with Postgres; treat its output as advisory until repointed.
-
-When repointing: deep-dive patches should INSERT into `source`/`citation`/
-`media`/`narrative` (see `parse_dossiers.py` for the shapes), not stringify into
-`notes`/`source_summary`.
-
-## FamilySearch refresh (still GPKG-oriented — pending repoint)
+## FamilySearch refresh
 
 Use the **`lrgdm-pedigree-walk`** skill: open
 `https://www.familysearch.org/en/tree/pedigree/landscape/L274-KNT` in the Chrome
 MCP browser (logged in as JohnKenny1); it fetches ~132 ancestors via FS's JSON
 endpoints to `~/Downloads`; an osascript bypass moves the file into
 `src/data/familysearch/` (Bash is sandboxed off `~/Downloads`);
-`reconcile_familysearch.py` proposes matches. **Note:** ingest currently lands in
-the GPKG — it must be repointed to Postgres to update the live tree.
+`reconcile_familysearch.py` proposes matches, then `ingest_familysearch.py`
+adds new ancestors **to Postgres**.
 
 ## Scheduled automation
 
 **Weekly remote routine** ([trig_01Ad4ZrnyND8NWYg89LrjDRb](https://claude.ai/code/routines/trig_01Ad4ZrnyND8NWYg89LrjDRb),
-Tue 21:00 America/Chicago, Anthropic cloud): runs the validator, web-mines 5
-ancestors, writes `reports/web_mentions/<person_id>.md`, opens a PR. Operates on
-the **committed GPKG** (no Postgres/Chrome in the cloud) → now out of step with
-the source of truth; advisory only.
+Tue 21:00 America/Chicago, Anthropic cloud): web-mines 5 ancestors, writes
+`reports/web_mentions/<person_id>.md`, opens a PR. **The cloud has no access to
+the local Postgres**, so it can't read the live tree — it needs rethinking
+(hosted DB, or a committed read-only export). Treat its picks as advisory.
 
 **Monthly local reminder** (launchd `com.lrgdm.monthly-refresh-reminder.plist`,
 1st @ 09:00) posts an ntfy push to topic `lrgdm` on the hurricane Pi
@@ -142,8 +134,7 @@ Restart: `launchctl bootout/bootstrap gui/$(id -u) <plist>`.
 
 ## What's next
 
-1. **Repoint the write-path tools** (apply_deep_dive / data-quality / ingest) to Postgres — biggest gap.
-2. **June 7 records scan** → drop images/scans via `add_media.py`; add maiden/nickname rows to `person_name`.
+1. **June 7 records scan** → drop images/scans via `add_media.py`; add maiden/nickname rows to `person_name`.
 3. **Photo overlay in the viewer** — surface `media`/`media_link` portraits in `docs/index.html` popups.
 4. **Branch assignment** for NULL-branch ancestors; **dedup** remaining duplicate persons (now via SQL against Postgres).
 5. **Time-slicing view** — parameterized year filter over the `v_*` layers.
@@ -160,6 +151,6 @@ Restart: `launchctl bootout/bootstrap gui/$(id -u) <plist>`.
 ## Memory / context for Claude
 
 Project memory: `~/.claude/projects/-Users-john-dev/memory/project_lrgdm.md` and
-`project_lrgdm_postgres_migration.md`. Skills: `lrgdm-pedigree-walk`,
-`lrgdm-data-quality`, `lrgdm-deep-dive`, `lrgdm-ingest-fs` (all currently
-GPKG-targeted — see Migration status).
+`project_lrgdm_postgres_migration.md`. Skills (their scripts now run on
+Postgres): `lrgdm-pedigree-walk`, `lrgdm-data-quality`, `lrgdm-deep-dive`,
+`lrgdm-ingest-fs`.

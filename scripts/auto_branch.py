@@ -26,7 +26,7 @@ import argparse
 import json
 import re
 import shutil
-import sqlite3
+from lrgdm_db import connect
 import sys
 import unicodedata
 from collections import defaultdict
@@ -263,12 +263,11 @@ def main() -> int:
     fs_by_pid = {p["pid"]: p for p in extract["people"]}
     person_child_fs, ambiguous = build_lineage(extract)
 
-    conn = sqlite3.connect(GPKG)
-    conn.row_factory = sqlite3.Row
+    conn = connect()
 
-    # GPKG-side maps
+    # DB-side maps
     rows = list(conn.execute(
-        "SELECT person_id, primary_name, fs_id, branch FROM People"
+        "SELECT person_id, primary_name, fs_id, branch FROM person"
     ))
     pid_to_branch: dict[str, str | None] = {r["person_id"]: r["branch"] for r in rows}
     pid_to_name: dict[str, str] = {r["person_id"]: r["primary_name"] for r in rows}
@@ -279,9 +278,10 @@ def main() -> int:
 
     # GPKG Relationships: build parent->child as ground truth (overrides FS guess)
     rel_parent_child = defaultdict(list)   # parent_pid -> [child_pid]
-    for pa, pb in conn.execute(
-        "SELECT person_id_a, person_id_b FROM Relationships WHERE relation='parent'"
+    for r in conn.execute(
+        "SELECT person_id_a, person_id_b FROM relationship WHERE relation='parent'"
     ):
+        pa, pb = r["person_id_a"], r["person_id_b"]
         if pa and pb:
             rel_parent_child[pa].append(pb)
 
@@ -434,19 +434,14 @@ def main() -> int:
         conn.close()
         return 0
 
-    backup = GPKG.with_suffix(".gpkg.pre-branch.bak")
-    shutil.copy2(GPKG, backup)
-    print(f"\nBacked up GPKG to {backup}")
-
-    # Drop People triggers (no geom on People, but trigger-handling is safe)
+    print("(Tip: run scripts/backup_db.sh first for a pg_dump snapshot.)")
     cur = conn.cursor()
-    cur.execute("BEGIN")
     n = 0
     for p in proposals:
         if not p["proposed_branch"]:
             continue
         cur.execute(
-            "UPDATE People SET branch = ? WHERE person_id = ?",
+            "UPDATE person SET branch = %s WHERE person_id = %s",
             (p["proposed_branch"], p["person_id"]),
         )
         n += 1
@@ -455,7 +450,7 @@ def main() -> int:
 
     print(f"\n== APPLIED ==")
     print(f"  branches updated: {n}")
-    print("\nNext: run cleanup_model.py to rebuild derived layers, then validate_gpkg.py.")
+    print("\nNext: run scripts/validate_gpkg.py.")
     return 0
 
 

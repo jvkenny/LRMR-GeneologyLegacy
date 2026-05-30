@@ -23,16 +23,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
-import sqlite3
-import struct
 import sys
 import unicodedata
 from datetime import date
 from pathlib import Path
 
+from psycopg.rows import tuple_row
+
+from lrgdm_db import connect
+
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 EXTRACT_DIR = REPO / "src/data/familysearch"
 
 
@@ -44,13 +44,6 @@ def normalize_place(name: str | None) -> str:
     s = re.sub(r"\s+", " ", s)
     s = re.sub(r"\s*,\s*", ", ", s)
     return s.strip()
-
-
-def make_point_gpkg_wkb(x: float, y: float, srs_id: int = 4326) -> bytes:
-    flags = 0x01
-    header = b"GP" + bytes([0, flags]) + struct.pack("<i", srs_id)
-    wkb = struct.pack("<BI", 1, 1) + struct.pack("<dd", x, y)
-    return header + wkb
 
 
 def infer_place_quality(name: str) -> str:
@@ -84,8 +77,8 @@ def load_extract() -> dict:
     return json.loads(candidates[-1].read_text())
 
 
-def next_id(conn: sqlite3.Connection, table: str, col: str, prefix: str) -> int:
-    rows = list(conn.execute(f"SELECT {col} FROM {table} WHERE {col} LIKE ?", (f"{prefix}%",)))
+def next_id(conn, table: str, col: str, prefix: str) -> int:
+    rows = list(conn.execute(f"SELECT {col} FROM {table} WHERE {col} LIKE %s", (f"{prefix}%",)))
     nums = []
     for r in rows:
         m = re.match(rf"{re.escape(prefix)}(\d+)$", r[0] or "")
@@ -98,44 +91,26 @@ def fmt_id(prefix: str, n: int, width: int = 4) -> str:
     return f"{prefix}{n:0{width}d}"
 
 
-def _capture_and_drop_triggers(cur: sqlite3.Cursor, tables: list[str]) -> list[tuple[str, str]]:
-    captured = []
-    for t in tables:
-        for n, s in cur.execute(
-            "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?", (t,),
-        ):
-            captured.append((n, s))
-    for n, _ in captured:
-        cur.execute(f'DROP TRIGGER IF EXISTS "{n}"')
-    return captured
-
-
-def _recreate(cur: sqlite3.Cursor, captured: list[tuple[str, str]]) -> None:
-    for _, sql in captured:
-        if sql:
-            cur.execute(sql)
-
-
-def plan(conn: sqlite3.Connection, extract: dict) -> dict:
+def plan(conn, extract: dict) -> dict:
     """Build the proposal: place matches, new places, and people updates."""
     fs_by_pid = {p["pid"]: p for p in extract["people"]}
 
-    # Existing Places, keyed by normalized name
+    # Existing places, keyed by normalized name
     existing_places: dict[str, str] = {}
-    for place_id, name in conn.execute("SELECT place_id, name FROM Places"):
+    for place_id, name in conn.execute("SELECT place_id, name FROM place"):
         if name:
             existing_places[normalize_place(name)] = place_id
 
     # People who need geocoding (fs_id set; birth_place_id OR death_place_id NULL)
     unmapped = list(conn.execute(
         "SELECT person_id, primary_name, fs_id, birth_place_id, death_place_id "
-        "FROM People "
+        "FROM person "
         "WHERE fs_id IS NOT NULL AND fs_id != '' "
         "  AND (birth_place_id IS NULL OR birth_place_id = '' "
         "       OR death_place_id IS NULL OR death_place_id = '')"
     ))
 
-    next_pl = next_id(conn, "Places", "place_id", "PL-")
+    next_pl = next_id(conn, "place", "place_id", "PL-")
 
     new_places: dict[str, dict] = {}    # keyed by normalized name
     people_updates: list[dict] = []
@@ -285,50 +260,34 @@ def write_reports(plan_out: dict, today: str) -> tuple[Path, Path]:
     return md_path, json_path
 
 
-def apply_plan(conn: sqlite3.Connection, plan_out: dict, today: str) -> dict:
+def apply_plan(conn, plan_out: dict, today: str) -> dict:
     cur = conn.cursor()
-    saved_pl = _capture_and_drop_triggers(cur, ["Places"])
-    saved_pp = _capture_and_drop_triggers(cur, ["People"])
 
-    # Insert new Places
+    # Insert new places (geom built from lat/lon via PostGIS; place has no
+    # lat/long columns — coordinates live in geom).
     for pl in plan_out["new_places"].values():
-        wkb = make_point_gpkg_wkb(pl["lon"], pl["lat"])
         cur.execute(
-            'INSERT INTO Places (geom, place_id, name, std_name, lat, long, geocode_quality, notes) '
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (wkb, pl["place_id"], pl["name"], pl["name"], pl["lat"], pl["lon"],
+            "INSERT INTO place (place_id, name, std_name, geom, geocode_quality, notes) "
+            "VALUES (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s)",
+            (pl["place_id"], pl["name"], pl["name"], pl["lon"], pl["lat"],
              pl["quality"], f"Auto-geocoded from FS extract {today}"),
         )
-        fid = cur.execute("SELECT fid FROM Places WHERE place_id=?", (pl["place_id"],)).fetchone()[0]
-        cur.execute(
-            "INSERT OR REPLACE INTO rtree_Places_geom (id, minx, maxx, miny, maxy) VALUES (?, ?, ?, ?, ?)",
-            (fid, pl["lon"], pl["lon"], pl["lat"], pl["lat"]),
-        )
 
-    # Update People
+    # Update person birth/death place refs
     for u in plan_out["people_updates"]:
         sets = []
         vals: list = []
         if u.get("new_birth_place_id"):
-            sets.append("birth_place_id = ?")
+            sets.append("birth_place_id = %s")
             vals.append(u["new_birth_place_id"])
         if u.get("new_death_place_id"):
-            sets.append("death_place_id = ?")
+            sets.append("death_place_id = %s")
             vals.append(u["new_death_place_id"])
         if not sets:
             continue
         vals.append(u["person_id"])
-        cur.execute(f"UPDATE People SET {', '.join(sets)} WHERE person_id = ?", vals)
+        cur.execute(f"UPDATE person SET {', '.join(sets)} WHERE person_id = %s", vals)
 
-    # Update feature_count for Places
-    new_count = cur.execute("SELECT COUNT(*) FROM Places").fetchone()[0]
-    cur.execute(
-        "UPDATE gpkg_ogr_contents SET feature_count = ? WHERE table_name = 'Places'",
-        (new_count,),
-    )
-
-    _recreate(cur, saved_pl)
-    _recreate(cur, saved_pp)
     conn.commit()
 
     return {
@@ -342,11 +301,8 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
 
-    if not GPKG.exists():
-        sys.exit(f"GPKG not found: {GPKG}")
-
     extract = load_extract()
-    conn = sqlite3.connect(GPKG)
+    conn = connect(row_factory=tuple_row)
     plan_out = plan(conn, extract)
 
     today = date.today().isoformat()
@@ -366,17 +322,14 @@ def main() -> int:
         conn.close()
         return 0
 
-    backup = GPKG.with_suffix(".gpkg.pre-geocode.bak")
-    shutil.copy2(GPKG, backup)
-    print(f"\nBacked up GPKG to {backup}")
-
+    print("(Tip: run scripts/backup_db.sh first for a pg_dump snapshot.)")
     summary = apply_plan(conn, plan_out, today)
     conn.close()
 
     print("\n== APPLIED ==")
     for k, v in summary.items():
         print(f"  {k}: {v}")
-    print("\nNext: run cleanup_model.py to rebuild derived layers, then validate_gpkg.py.")
+    print("\nNext: run scripts/validate_gpkg.py. (Derived map layers are live views.)")
     return 0
 
 

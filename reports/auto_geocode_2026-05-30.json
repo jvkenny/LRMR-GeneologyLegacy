@@ -1,0 +1,276 @@
+{
+  "generated": "2026-05-30",
+  "unmapped_count": 36,
+  "people_updates_count": 1,
+  "new_places_count": 1,
+  "no_fs_match_count": 0,
+  "no_place_in_fs_count": 35,
+  "people_updates": [
+    {
+      "person_id": "P-0062",
+      "primary_name": "Earl Wayne Reed Sr",
+      "fs_id": "M3P5-XF6",
+      "current_birth_place_id": "PL-0208",
+      "current_death_place_id": null,
+      "new_death_place_id": "PL-5245",
+      "death_reason": "burial fallback: created new `PL-5245` from FS coords"
+    }
+  ],
+  "new_places": [
+    {
+      "place_id": "PL-5245",
+      "name": "Elgin, Kane, Illinois, United States",
+      "lat": 42.037,
+      "lon": -88.281,
+      "quality": "settlement"
+    }
+  ],
+  "no_fs_match": [],
+  "no_place_in_fs": [
+    {
+      "person_id": "P-0118",
+      "name": "Maria Angiola Ercolini",
+      "fs_id": "GRLV-YDR",
+      "birth_reason": "no place in FS",
+      "death_reason": null
+    },
+    {
+      "person_id": "P-0117",
+      "name": "Pier Domenico Spadoni",
+      "fs_id": "GRLV-XZB",
+      "birth_reason": "no place in FS",
+      "death_reason": null
+    },
+    {
+      "person_id": "P-0099",
+      "name": "Giovanni Dini",
+      "fs_id": "P355-XWC",
+      "birth_reason": "no place in FS",
+      "death_reason": null
+    },
+    {
+      "person_id": "P-0146",
+      "name": "Franti\u0161ka Dole\u017ealov\u00e1",
+      "fs_id": "GWCT-1N1",
+      "birth_reason": "no place in FS",
+      "death_reason": null
+    },
+    {
+      "person_id": "P-0166",
+      "name": "CATERINA PARLANTI",
+      "fs_id": "PM4B-ZZR",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0165",
+      "name": "GIUSEPPE PORCIANI",
+      "fs_id": "PM4B-PBP",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0152",
+      "name": "Magdalena \u0158\u00edhov\u00e1",
+      "fs_id": "GT5S-PGJ",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0151",
+      "name": "Magdalena Dufkov\u00e1",
+      "fs_id": "PH93-PYK",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0150",
+      "name": "V\u00e1clav \u0158\u00edha",
+      "fs_id": "GPDL-25D",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0149",
+      "name": "Eva Zemanov\u00e1",
+      "fs_id": "GT5S-14P",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0148",
+      "name": "Franti\u0161ek Jan Michal\u00ed\u010dek",
+      "fs_id": "PH93-RMY",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0147",
+      "name": "Anton\u00edn Zeman",
+      "fs_id": "GPDL-R79",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0139",
+      "name": "Mabel Pinney",
+      "fs_id": "L5ZR-LXX",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0126",
+      "name": "Ann Patton",
+      "fs_id": "KVJJ-2F9",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0121",
+      "name": "Carlo Dini",
+      "fs_id": "P99N-2W1",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0119",
+      "name": "Annunziata Grossi",
+      "fs_id": "P99N-599",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0116",
+      "name": "Elisabetta Giovacchini",
+      "fs_id": "P35T-Q4G",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0115",
+      "name": "Pietro Dini",
+      "fs_id": "P355-FRN",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0107",
+      "name": "Martin Z\u00edka",
+      "fs_id": "L2V1-YHK",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0104",
+      "name": "Thomas Spear",
+      "fs_id": "K8F2-Y27",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0103",
+      "name": "Nancy Walls",
+      "fs_id": "K4BN-VM7",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0102",
+      "name": "Pellegrino Giorgi",
+      "fs_id": "P7P4-8PM",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0101",
+      "name": "Piera Bellandi",
+      "fs_id": "PC4W-R8N",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0098",
+      "name": "Leopoldo Pagni",
+      "fs_id": "P7PW-CCK",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0097",
+      "name": "Henriette Cheffre",
+      "fs_id": "GYVW-44Y",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0096",
+      "name": "Pasqua Rosa Spadoni",
+      "fs_id": "GSQJ-4RC",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0093",
+      "name": "Joseph Filiatrault dit St. Louis",
+      "fs_id": "GYV7-TRD",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0090",
+      "name": "Franti\u0161ek \u0158\u00edha",
+      "fs_id": "GS6J-92Z",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0089",
+      "name": "Franti\u0161ka Klusov\u00e1",
+      "fs_id": "GWCT-JQN",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0081",
+      "name": "Cherubina Giorgi",
+      "fs_id": "P3YM-9YQ",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0077",
+      "name": "Josephine Riha Veta",
+      "fs_id": "LBH1-TK2",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0073",
+      "name": "Celestino Dini",
+      "fs_id": "GSQJ-M1C",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0065",
+      "name": "Louis Dini",
+      "fs_id": "GCKQ-RK3",
+      "birth_reason": null,
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0057",
+      "name": "Laura Kroll",
+      "fs_id": "L24Z-SFM",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    },
+    {
+      "person_id": "P-0054",
+      "name": "Phyllis Kroll",
+      "fs_id": "L274-KGR",
+      "birth_reason": "no place in FS",
+      "death_reason": "no place in FS"
+    }
+  ]
+}

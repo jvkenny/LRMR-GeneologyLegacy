@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import argparse
 import re
-import sqlite3
+from psycopg.rows import tuple_row
+
+from lrgdm_db import connect
 import sys
 from pathlib import Path
 
@@ -85,47 +87,24 @@ def plan(conn: sqlite3.Connection) -> dict:
     """Return a dict describing what would change, without writing."""
     out: dict = {}
 
-    # ---- 1. duplicate Places ----
-    dup_groups = list(conn.execute(
-        "SELECT place_id, COUNT(*) FROM Places "
-        "GROUP BY place_id HAVING COUNT(*) > 1"
-    ))
-    keep_fids: dict[str, int] = {}
-    drop_fids: list[int] = []
-    for pid, _ in dup_groups:
-        fids = [r[0] for r in conn.execute(
-            "SELECT fid FROM Places WHERE place_id=? ORDER BY fid", (pid,)
-        )]
-        keep_fids[pid] = fids[0]
-        drop_fids.extend(fids[1:])
-    out["places_dedupe"] = {
-        "duplicate_place_ids": len(dup_groups),
-        "rows_to_drop": len(drop_fids),
-        "keep_fids_sample": dict(list(keep_fids.items())[:5]),
-    }
+    # ---- 1. (Place dedup is obsolete: place_id is the Postgres PK.) ----
 
-    # ---- 2. geocode_quality backfill ----
-    quality_updates: list[tuple[str, str, int]] = []
-    for fid, place_id, name, gq in conn.execute(
-        "SELECT fid, place_id, name, geocode_quality FROM Places "
+    # ---- 2. geocode_quality backfill (keyed by place_id) ----
+    quality_updates: list[tuple[str, str]] = []
+    for place_id, name in conn.execute(
+        "SELECT place_id, name FROM place "
         "WHERE geocode_quality IS NULL OR TRIM(geocode_quality) = ''"
     ):
-        # Skip rows we're about to drop
-        if fid in drop_fids:
-            continue
-        quality_updates.append((place_id, infer_quality(name), fid))
+        quality_updates.append((place_id, infer_quality(name)))
     out["geocode_quality_updates"] = {
         "count": len(quality_updates),
-        "sample": [
-            (pid, q, fid)
-            for (pid, q, fid) in quality_updates[:8]
-        ],
+        "sample": quality_updates[:8],
     }
 
     # ---- 3. branch backfill ----
     branch_updates = [
         (r[0], r[1]) for r in conn.execute(
-            "SELECT person_id, primary_name FROM People "
+            "SELECT person_id, primary_name FROM person "
             "WHERE (branch IS NULL OR branch = '') "
         )
     ]
@@ -144,118 +123,40 @@ def plan(conn: sqlite3.Connection) -> dict:
     # ---- 4. "NULL" string normalization ----
     nullstr = [
         (r[0], r[1]) for r in conn.execute(
-            "SELECT person_id, primary_name FROM People WHERE branch = 'NULL'"
+            "SELECT person_id, primary_name FROM person WHERE branch = 'NULL'"
         )
     ]
     out["null_string_branch"] = {"count": len(nullstr), "rows": nullstr}
 
-    # ---- 5. broken Event place_id refs ----
-    place_ids = {r[0] for r in conn.execute("SELECT DISTINCT place_id FROM Places")}
-    broken_events = [
-        dict(zip(("event_id", "title", "event_type", "place_id", "notes"), r))
-        for r in conn.execute(
-            "SELECT event_id, title, event_type, place_id, notes "
-            "FROM Events WHERE place_id IS NOT NULL AND place_id != ''"
-        )
-        if r[3] not in place_ids
-    ]
-    out["broken_event_place_ids"] = {
-        "count": len(broken_events),
-        "missing_pids": sorted({e["place_id"] for e in broken_events}),
-        "sample": broken_events[:5],
-    }
+    # ---- 5. (Broken event place_id refs are obsolete: FKs are enforced.) ----
 
-    return out, drop_fids, quality_updates, broken_events
+    return out, quality_updates
 
 
-def _capture_and_drop_triggers(cur: sqlite3.Cursor, tables: list[str]) -> list[tuple[str, str]]:
-    """Snapshot trigger definitions for given tables, drop them, and return the
-    captured (name, sql) pairs so the caller can recreate them after writes."""
-    captured: list[tuple[str, str]] = []
-    for tbl in tables:
-        for name, sql in cur.execute(
-            "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?",
-            (tbl,),
-        ):
-            captured.append((name, sql))
-    for name, _ in captured:
-        cur.execute(f'DROP TRIGGER IF EXISTS "{name}"')
-    return captured
-
-
-def _recreate_triggers(cur: sqlite3.Cursor, captured: list[tuple[str, str]]) -> None:
-    for name, sql in captured:
-        cur.execute(sql)
-
-
-def apply_fixes(
-    conn: sqlite3.Connection,
-    drop_fids: list[int],
-    quality_updates: list[tuple[str, str, int]],
-    broken_events: list[dict],
-) -> dict:
+def apply_fixes(conn, quality_updates: list[tuple[str, str]]) -> dict:
     cur = conn.cursor()
 
-    # The GeoPackage rtree triggers call ST_IsEmpty(), which plain Python
-    # sqlite3 doesn't expose. We're only modifying non-geometry columns and
-    # deleting whole rows — the rtree stays correct as long as we don't touch
-    # geom. So snapshot the triggers, drop them around the writes, then
-    # recreate them. Also drop the feature_count triggers and patch
-    # gpkg_ogr_contents manually after the deletes.
-    saved = _capture_and_drop_triggers(cur, ["Places", "Events"])
-
-    # 1. Dedupe Places
-    if drop_fids:
-        cur.executemany(
-            "DELETE FROM Places WHERE fid = ?",
-            [(fid,) for fid in drop_fids],
-        )
-        # Patch gpkg_ogr_contents feature_count for Places
-        new_count = cur.execute("SELECT COUNT(*) FROM Places").fetchone()[0]
+    # 1. geocode_quality (keyed by place_id; no rtree/contents dance in Postgres)
+    for place_id, quality in quality_updates:
         cur.execute(
-            "UPDATE gpkg_ogr_contents SET feature_count = ? WHERE table_name = 'Places'",
-            (new_count,),
-        )
-        # Clean rtree entries for deleted fids (rtree triggers were dropped)
-        cur.executemany(
-            "DELETE FROM rtree_Places_geom WHERE id = ?",
-            [(fid,) for fid in drop_fids],
+            "UPDATE place SET geocode_quality = %s WHERE place_id = %s",
+            (quality, place_id),
         )
 
-    # 2. geocode_quality
-    for place_id, quality, fid in quality_updates:
+    # 2. branch backfill
+    for pid in PATERNAL_REED_BACKFILL:
         cur.execute(
-            "UPDATE Places SET geocode_quality = ? WHERE fid = ?",
-            (quality, fid),
+            "UPDATE person SET branch = 'Paternal Reed' WHERE person_id = %s",
+            (pid,),
         )
 
-    # 3. branch backfill
-    cur.executemany(
-        "UPDATE People SET branch = 'Paternal Reed' WHERE person_id = ?",
-        [(pid,) for pid in PATERNAL_REED_BACKFILL],
-    )
+    # 3. Normalize "NULL" string
+    cur.execute("UPDATE person SET branch = NULL WHERE branch = 'NULL'")
 
-    # 4. Normalize "NULL" string
-    cur.execute("UPDATE People SET branch = NULL WHERE branch = 'NULL'")
-
-    # 5. NULL broken event place_ids, capture in notes
-    for ev in broken_events:
-        original = ev["place_id"]
-        old_notes = (ev["notes"] or "").strip()
-        marker = f"[fixup 2026-05-26] place_id was `{original}` (no matching Places row)"
-        new_notes = f"{old_notes}\n{marker}".strip() if old_notes else marker
-        cur.execute(
-            "UPDATE Events SET place_id = NULL, notes = ? WHERE event_id = ?",
-            (new_notes, ev["event_id"]),
-        )
-
-    _recreate_triggers(cur, saved)
     conn.commit()
     return {
-        "places_dropped": len(drop_fids),
         "geocode_quality_set": len(quality_updates),
         "branch_backfilled": len(PATERNAL_REED_BACKFILL),
-        "broken_events_nulled": len(broken_events),
     }
 
 
@@ -264,19 +165,13 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
 
-    if not GPKG.exists():
-        print(f"GPKG not found: {GPKG}", file=sys.stderr)
-        return 1
-
-    conn = sqlite3.connect(GPKG)
-    pln, drop_fids, quality_updates, broken_events = plan(conn)
+    conn = connect(row_factory=tuple_row)
+    pln, quality_updates = plan(conn)
 
     print("== PLAN ==")
-    print(f"Places to dedupe        : {pln['places_dedupe']['rows_to_drop']} rows across "
-          f"{pln['places_dedupe']['duplicate_place_ids']} place_ids")
     print(f"geocode_quality updates : {pln['geocode_quality_updates']['count']}")
-    for pid, q, fid in pln["geocode_quality_updates"]["sample"]:
-        print(f"   {pid:>10}  fid={fid}  -> {q}")
+    for pid, q in pln["geocode_quality_updates"]["sample"]:
+        print(f"   {pid:>10}  -> {q}")
     print(f"branch backfill         : {pln['branch_backfill']['count']} (all -> 'Paternal Reed')")
     if pln["branch_backfill"]["unhandled_unbranched_people"]:
         print("   STILL UNBRANCHED after this run:")
@@ -285,15 +180,14 @@ def main() -> int:
     print(f"'NULL' string -> NULL   : {pln['null_string_branch']['count']}")
     for pid, name in pln["null_string_branch"]["rows"]:
         print(f"   {pid}: {name}")
-    print(f"broken Event FKs to NULL: {pln['broken_event_place_ids']['count']}")
-    print(f"   missing place_ids: {pln['broken_event_place_ids']['missing_pids']}")
 
     if not args.apply:
         print("\n(dry-run) pass --apply to commit.")
         conn.close()
         return 0
 
-    summary = apply_fixes(conn, drop_fids, quality_updates, broken_events)
+    print("(Tip: run scripts/backup_db.sh first for a pg_dump snapshot.)")
+    summary = apply_fixes(conn, quality_updates)
     conn.close()
     print("\n== APPLIED ==")
     for k, v in summary.items():
