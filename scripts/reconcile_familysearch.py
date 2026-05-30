@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sqlite3
+from lrgdm_db import connect
 import sys
 import unicodedata
 from dataclasses import dataclass
@@ -141,7 +141,6 @@ def main() -> int:
             default="",
         ),
     )
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--out-dir", type=Path, default=REPO / "reports")
     ap.add_argument("--min-score", type=float, default=0.55)
     args = ap.parse_args()
@@ -153,20 +152,15 @@ def main() -> int:
     fs_people = load_fs(args.extract)
     fs_by_pid = {p.pid: p for p in fs_people}
 
-    conn = sqlite3.connect(args.gpkg)
-    conn.row_factory = sqlite3.Row
-    unlinked = [
-        dict(r) for r in conn.execute(
+    with connect() as conn:
+        cur = conn.cursor()
+        cur.execute(
             "SELECT person_id, primary_name, sex, birth_date, death_date, branch, fs_id "
-            "FROM People WHERE fs_id IS NULL OR fs_id = ''"
+            "FROM person WHERE fs_id IS NULL OR fs_id = ''"
         )
-    ]
-    already_linked_pids = {
-        r["fs_id"] for r in conn.execute(
-            "SELECT fs_id FROM People WHERE fs_id IS NOT NULL AND fs_id != ''"
-        )
-    }
-    conn.close()
+        unlinked = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT fs_id FROM person WHERE fs_id IS NOT NULL AND fs_id != ''")
+        already_linked_pids = {r["fs_id"] for r in cur.fetchall()}
 
     results = []
     for row in unlinked:
@@ -206,7 +200,7 @@ def main() -> int:
     json_path.write_text(json.dumps({
         "generated": today,
         "extract": str(args.extract.relative_to(REPO)),
-        "gpkg": str(args.gpkg.relative_to(REPO)),
+        "database": "lrgdm",
         "min_score": args.min_score,
         "already_linked_count": len(already_linked_pids),
         "unlinked_count": len(unlinked),
@@ -217,8 +211,8 @@ def main() -> int:
         f"# FamilySearch Reconciliation — {today}",
         "",
         f"- Extract: `{args.extract.relative_to(REPO)}`",
-        f"- GPKG: `{args.gpkg.relative_to(REPO)}`",
-        f"- Already linked in GPKG: **{len(already_linked_pids)}** People rows",
+        f"- Database: `lrgdm`",
+        f"- Already linked: **{len(already_linked_pids)}** person rows",
         f"- Unlinked People rows reviewed: **{len(unlinked)}**",
         f"- Minimum match score: {args.min_score}",
         "",

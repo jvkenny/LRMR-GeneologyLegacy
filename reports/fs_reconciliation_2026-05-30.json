@@ -1,0 +1,138 @@
+{
+  "generated": "2026-05-30",
+  "extract": "src/data/familysearch/extract_L274-KNT_2026-05-26.json",
+  "database": "lrgdm",
+  "min_score": 0.55,
+  "already_linked_count": 129,
+  "unlinked_count": 16,
+  "results": [
+    {
+      "person_id": "P-0004",
+      "primary_name": "Elizabeth (Willey) Reed",
+      "birth_date": "circa 1846",
+      "death_date": "1880-12-20",
+      "branch": "Paternal Reed by marriage",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0002",
+      "primary_name": "Rebecca (Talley) Reed",
+      "birth_date": "circa 1822",
+      "death_date": "1911",
+      "branch": "Paternal Reed",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0001",
+      "primary_name": "Bonum Reed",
+      "birth_date": "1816-06-03",
+      "death_date": "1893-12-13",
+      "branch": "Paternal Reed",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0012",
+      "primary_name": "Helen Amelia (Boles) Lambert",
+      "birth_date": "circa 1849",
+      "death_date": "1939-01-23",
+      "branch": "Maternal Lambert",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0033",
+      "primary_name": "James G. Reed",
+      "birth_date": "circa 1939",
+      "death_date": "NULL",
+      "branch": "Reed-Zika",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0031",
+      "primary_name": "Earl Wayne Reed Jr.",
+      "birth_date": "1930",
+      "death_date": "2024",
+      "branch": "Reed-Zika",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0028",
+      "primary_name": "Henriette (Cheffre) Filiatrault",
+      "birth_date": "circa 1821",
+      "death_date": "NULL",
+      "branch": "Pouliot",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0027",
+      "primary_name": "Joseph Filiatrault dit St. Louis",
+      "birth_date": "circa 1820",
+      "death_date": "NULL",
+      "branch": "Pouliot",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0025",
+      "primary_name": "Fran\u00e7ois Pouliot",
+      "birth_date": "1805-05-20",
+      "death_date": "1858-06-13",
+      "branch": "Pouliot",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0020",
+      "primary_name": "Josef\u00edna \u201cJosie\u201d (\u0158\u00edha) Zika",
+      "birth_date": "1853",
+      "death_date": "1930",
+      "branch": "Zika",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0019",
+      "primary_name": "Anton Zika",
+      "birth_date": "1859-06-13",
+      "death_date": "1948",
+      "branch": "Zika",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0018",
+      "primary_name": "Permelia M. Oak",
+      "birth_date": "1788",
+      "death_date": "1845",
+      "branch": "Maternal Lambert",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0016",
+      "primary_name": "Lydia A. (Hopkins) Lambert",
+      "birth_date": "1738",
+      "death_date": "1806",
+      "branch": "Maternal Lambert",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0013",
+      "primary_name": "Silas P. Boles",
+      "birth_date": "1818",
+      "death_date": "1900",
+      "branch": "Maternal Lambert",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0010",
+      "primary_name": "Permelia (Barnard) Lambert",
+      "birth_date": "circa 1798",
+      "death_date": "1865",
+      "branch": "Maternal Lambert",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0035",
+      "primary_name": "Emma Rebecca Reed",
+      "birth_date": "1873",
+      "death_date": "circa 1905",
+      "branch": "Paternal Reed",
+      "candidates": []
+    }
+  ]
+}

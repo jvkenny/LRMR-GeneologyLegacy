@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict B2rDtFrBNSSFWeqiKUuSnCXQ73Pc8q2Zi2W9yLyAmjrQTcOamcAFIiKnhszx2rw
+\restrict KntsdULVjzjXiXIBSxJJ5NaG4szrMXHe9Xffg1td2LDtBOB3XR5AxVRKfZp7u36
 
 -- Dumped from database version 18.3 (Homebrew)
 -- Dumped by pg_dump version 18.3 (Homebrew)
@@ -2788,5 +2788,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE john IN SCHEMA public GRANT SELECT,INSERT,DELE
 -- PostgreSQL database dump complete
 --
 
-\unrestrict B2rDtFrBNSSFWeqiKUuSnCXQ73Pc8q2Zi2W9yLyAmjrQTcOamcAFIiKnhszx2rw
+\unrestrict KntsdULVjzjXiXIBSxJJ5NaG4szrMXHe9Xffg1td2LDtBOB3XR5AxVRKfZp7u36
 

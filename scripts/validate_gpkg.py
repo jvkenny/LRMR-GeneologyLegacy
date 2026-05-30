@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
-"""Data-quality validator for lrgdm.gpkg.
+"""Data-quality validator for the LRGDM Postgres database.
 
-Reads the GPKG, runs a fixed set of consistency checks, and writes a
-markdown report to reports/validation_<DATE>.md.
+Reads the DB, runs a fixed set of consistency checks, and writes a markdown
+report to reports/validation_<DATE>.md. Foreign keys are ENFORCED in Postgres,
+so the old broken-FK checks are gone — this focuses on the things constraints
+can't catch.
 
 Checks:
-- People: rows missing names, sex, branch
-- People: birth_date >= death_date
-- People: duplicate (normalized_name, birth_year) pairs
-- People: fs_id referenced more than once
-- Places: rows missing lat/long or with out-of-range coords
-- Places: low or missing geocode_quality (configurable)
-- Places: orphan Places (place_id never referenced by People birth/death/event)
-- Events: missing place_id, missing PID_People, date_start > date_end
-- Events: place_id pointing to a non-existent Places row
-- Relationships: person_id_a / person_id_b not in People
+- person: missing names, sex, branch
+- person: birth_date after death_date
+- person: duplicate (normalized_name, birth_year) pairs
+- person: fs_id referenced more than once
+- place: missing/out-of-range coordinates; low/missing geocode_quality; orphans
+- event: missing place_id, no participants, date_start > date_end
 
-No writes to the GPKG.
+No writes. Conninfo via $LRGDM_PG (default dbname=lrgdm).
+(Filename kept as validate_gpkg.py for backward-compat with existing callers.)
 """
 from __future__ import annotations
 
 import argparse
 import re
-import sqlite3
-import sys
 import unicodedata
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
+
+from psycopg.rows import tuple_row
+
+from lrgdm_db import connect
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -49,7 +50,6 @@ def parse_year(date_str: str | None) -> int | None:
 
 
 def parse_iso(date_str: str | None) -> str | None:
-    """Return a sortable YYYY-MM-DD-ish string when the input looks ISO; else None."""
     if not date_str:
         return None
     m = re.match(r"^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$", date_str.strip())
@@ -72,15 +72,13 @@ class Report:
         return sum(self.counts.values())
 
 
-def check_people(conn: sqlite3.Connection, rep: Report) -> None:
-    rows = list(conn.execute(
+def check_people(cur, rep: Report) -> None:
+    cur.execute(
         "SELECT person_id, primary_name, sex, branch, birth_date, death_date, fs_id "
-        "FROM People"
-    ))
-
-    # Missing fields
-    for r in rows:
-        pid, name, sex, branch, bd, dd, _ = r
+        "FROM person"
+    )
+    rows = cur.fetchall()
+    for pid, name, sex, branch, bd, dd, _ in rows:
         if not name or not name.strip():
             rep.add("missing-fields", f"`{pid}` has no primary_name")
         if not sex:
@@ -88,25 +86,17 @@ def check_people(conn: sqlite3.Connection, rep: Report) -> None:
         if not branch:
             rep.add("missing-fields", f"`{pid}` ({name}) has no branch")
 
-    # Birth >= death
-    for r in rows:
-        pid, name, _, _, bd, dd, _ = r
+    for pid, name, _, _, bd, dd, _ in rows:
         bi, di = parse_iso(bd), parse_iso(dd)
         if bi and di and bi > di:
             rep.add("date-order", f"`{pid}` ({name}): birth {bd} is after death {dd}")
-        by, dy = parse_year(bd), parse_year(dd)
-        if by and dy and by > dy:
-            # Already caught above when both parse; this catches partial dates
-            if not (bi and di):
-                rep.add(
-                    "date-order",
-                    f"`{pid}` ({name}): birth year {by} > death year {dy}",
-                )
+        else:
+            by, dy = parse_year(bd), parse_year(dd)
+            if by and dy and by > dy:
+                rep.add("date-order", f"`{pid}` ({name}): birth year {by} > death year {dy}")
 
-    # Duplicate (name, birth_year) pairs
     buckets: dict[tuple[str, int | None], list[tuple[str, str]]] = defaultdict(list)
-    for r in rows:
-        pid, name, _, _, bd, _, _ = r
+    for pid, name, _, _, bd, _, _ in rows:
         key = (normalize_name(name), parse_year(bd))
         if key[0]:
             buckets[key].append((pid, name))
@@ -116,10 +106,8 @@ def check_people(conn: sqlite3.Connection, rep: Report) -> None:
             ids = ", ".join(f"`{p}` ({n})" for p, n in members)
             rep.add("duplicate-people", f"{ids} share name `{nm}` and birth year {yr_str}")
 
-    # fs_id collisions
     fs_buckets: dict[str, list[tuple[str, str]]] = defaultdict(list)
-    for r in rows:
-        pid, name, _, _, _, _, fs_id = r
+    for pid, name, _, _, _, _, fs_id in rows:
         if fs_id and fs_id.strip():
             fs_buckets[fs_id.strip()].append((pid, name))
     for fs_id, members in fs_buckets.items():
@@ -128,32 +116,19 @@ def check_people(conn: sqlite3.Connection, rep: Report) -> None:
             rep.add("fs-id-collision", f"FS PID `{fs_id}` linked to {ids}")
 
 
-def check_places(conn: sqlite3.Connection, rep: Report, low_quality: set[str]) -> None:
-    rows = list(conn.execute(
-        "SELECT place_id, name, lat, long, geocode_quality FROM Places"
-    ))
+def check_places(cur, rep: Report, low_quality: set[str]) -> None:
+    cur.execute(
+        "SELECT place_id, name, ST_Y(geom), ST_X(geom), geocode_quality FROM place"
+    )
+    rows = cur.fetchall()
 
     referenced = set()
-    for col, tbl in [
-        ("birth_place_id", "People"),
-        ("death_place_id", "People"),
-        ("place_id", "Events"),
-    ]:
-        for (pl,) in conn.execute(f"SELECT {col} FROM {tbl} WHERE {col} IS NOT NULL AND {col} != ''"):
-            referenced.add(pl)
+    for col, tbl in [("birth_place_id", "person"), ("death_place_id", "person"),
+                     ("place_id", "event")]:
+        cur.execute(f"SELECT {col} FROM {tbl} WHERE {col} IS NOT NULL")
+        referenced.update(r[0] for r in cur.fetchall())
 
-    for pid, name, lat, lon, gq in rows:
-        try:
-            lat_f = float(lat) if lat not in (None, "") else None
-        except (TypeError, ValueError):
-            lat_f = None
-            rep.add("place-coords", f"`{pid}` ({name}): lat `{lat}` is not numeric")
-        try:
-            lon_f = float(lon) if lon not in (None, "") else None
-        except (TypeError, ValueError):
-            lon_f = None
-            rep.add("place-coords", f"`{pid}` ({name}): long `{lon}` is not numeric")
-
+    for pid, name, lat_f, lon_f, gq in rows:
         if lat_f is None or lon_f is None:
             rep.add("place-coords", f"`{pid}` ({name}) missing coordinates")
         else:
@@ -161,61 +136,30 @@ def check_places(conn: sqlite3.Connection, rep: Report, low_quality: set[str]) -
                 rep.add("place-coords", f"`{pid}` ({name}): lat {lat_f} out of range")
             if not (-180 <= lon_f <= 180):
                 rep.add("place-coords", f"`{pid}` ({name}): long {lon_f} out of range")
-
         if gq is None or not str(gq).strip():
             rep.add("place-quality", f"`{pid}` ({name}) has no geocode_quality")
         elif str(gq).strip().lower() in low_quality:
             rep.add("place-quality", f"`{pid}` ({name}) has low geocode_quality=`{gq}`")
-
         if pid not in referenced:
-            rep.add("place-orphan", f"`{pid}` ({name}) not referenced by any Person or Event")
+            rep.add("place-orphan", f"`{pid}` ({name}) not referenced by any person or event")
 
 
-def check_events(conn: sqlite3.Connection, rep: Report) -> None:
-    place_ids = {p[0] for p in conn.execute("SELECT place_id FROM Places")}
-    person_ids = {p[0] for p in conn.execute("SELECT person_id FROM People")}
-
-    for r in conn.execute(
-        "SELECT event_id, title, event_type, date_start, date_end, place_id, PID_People "
-        "FROM Events"
-    ):
-        eid, title, et, ds, de, place_id, pid_people = r
+def check_events(cur, rep: Report) -> None:
+    cur.execute("SELECT DISTINCT event_id FROM event_participant")
+    with_participants = {r[0] for r in cur.fetchall()}
+    cur.execute("SELECT event_id, title, event_type, date_start, date_end, place_id FROM event")
+    for eid, title, et, ds, de, place_id in cur.fetchall():
         if not place_id:
             rep.add("event-missing", f"`{eid}` ({title or et}) has no place_id")
-        elif place_id not in place_ids:
-            rep.add("event-broken-fk", f"`{eid}` ({title or et}): place_id `{place_id}` not in Places")
-
-        if not pid_people:
-            rep.add("event-missing", f"`{eid}` ({title or et}) has no PID_People")
-        else:
-            # Some Events.PID_People are pipe-delimited or comma-delimited
-            tokens = [t.strip() for t in re.split(r"[|,;]", pid_people) if t.strip()]
-            for t in tokens:
-                if t not in person_ids:
-                    rep.add(
-                        "event-broken-fk",
-                        f"`{eid}` ({title or et}): PID_People `{t}` not in People",
-                    )
-
+        if eid not in with_participants:
+            rep.add("event-missing", f"`{eid}` ({title or et}) has no participants")
         si, ei = parse_iso(ds), parse_iso(de)
         if si and ei and si > ei:
             rep.add("event-date-order", f"`{eid}` ({title or et}): date_start {ds} > date_end {de}")
 
 
-def check_relationships(conn: sqlite3.Connection, rep: Report) -> None:
-    person_ids = {p[0] for p in conn.execute("SELECT person_id FROM People")}
-    for rel_id, pa, rel, pb in conn.execute(
-        "SELECT rel_id, person_id_a, relation, person_id_b FROM Relationships"
-    ):
-        if pa and pa not in person_ids:
-            rep.add("rel-broken-fk", f"`{rel_id}`: person_id_a `{pa}` not in People")
-        if pb and pb not in person_ids:
-            rep.add("rel-broken-fk", f"`{rel_id}`: person_id_b `{pb}` not in People")
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--out-dir", type=Path, default=REPO / "reports")
     ap.add_argument(
         "--low-quality",
@@ -224,42 +168,34 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    if not args.gpkg.exists():
-        print(f"GPKG not found: {args.gpkg}", file=sys.stderr)
-        return 1
-
     low_quality = {s.strip().lower() for s in args.low_quality.split(",") if s.strip()}
-    conn = sqlite3.connect(args.gpkg)
-
     rep = Report()
-    check_people(conn, rep)
-    check_places(conn, rep, low_quality)
-    check_events(conn, rep)
-    check_relationships(conn, rep)
-    conn.close()
+    with connect(row_factory=tuple_row) as conn:
+        cur = conn.cursor()
+        check_people(cur, rep)
+        check_places(cur, rep, low_quality)
+        check_events(cur, rep)
 
     today = date.today().isoformat()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"validation_{today}.md"
 
     section_titles = {
-        "missing-fields": "People — missing required fields",
-        "date-order": "People — birth/death date ordering",
-        "duplicate-people": "People — duplicate (name, birth year) pairs",
-        "fs-id-collision": "People — fs_id linked to multiple rows",
-        "place-coords": "Places — coordinate problems",
-        "place-quality": "Places — low/missing geocode_quality",
-        "place-orphan": "Places — not referenced by any person or event",
-        "event-missing": "Events — missing place_id or PID_People",
-        "event-broken-fk": "Events — broken foreign keys",
-        "event-date-order": "Events — date_start after date_end",
-        "rel-broken-fk": "Relationships — broken foreign keys",
+        "missing-fields": "person — missing required fields",
+        "date-order": "person — birth/death date ordering",
+        "duplicate-people": "person — duplicate (name, birth year) pairs",
+        "fs-id-collision": "person — fs_id linked to multiple rows",
+        "place-coords": "place — coordinate problems",
+        "place-quality": "place — low/missing geocode_quality",
+        "place-orphan": "place — not referenced by any person or event",
+        "event-missing": "event — missing place_id or participants",
+        "event-date-order": "event — date_start after date_end",
     }
 
     lines = [
         f"# LRGDM Validation — {today}",
         "",
-        f"- GPKG: `{args.gpkg.relative_to(REPO)}`",
+        "- Source: Postgres db `lrgdm`",
         f"- Total findings: **{rep.total()}**",
         "",
         "## Summary",

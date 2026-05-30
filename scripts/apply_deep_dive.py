@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply a deep-dive dossier's structured patches to lrgdm.gpkg.
+"""Apply a deep-dive dossier's structured patches to the LRGDM Postgres database.
 
 Reads `reports/deep-dives/<person_id>.md`, parses every fenced JSON block
 tagged ```json deep-dive-patch, validates the patch set, and on --apply
@@ -24,9 +24,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
-import sqlite3
-import struct
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -34,10 +31,13 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from psycopg.rows import dict_row, tuple_row
+
+from lrgdm_db import connect
+
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 DOSSIERS_DIR = REPO / "reports/deep-dives"
-CLEANUP_SCRIPT = REPO / "scripts/cleanup_model.py"
+PARSE_DOSSIERS = REPO / "scripts/parse_dossiers.py"
 
 PATCH_BLOCK_RE = re.compile(
     r"```json\s+deep-dive-patch\s*\n(.*?)\n```",
@@ -182,30 +182,17 @@ def _norm(s: str | None) -> str:
     return (s or "").strip().casefold()
 
 
-def _next_id(conn: sqlite3.Connection, table: str, col: str, prefix: str, width: int) -> str:
-    """Return the next free ID like 'PL-####' or 'E-####'."""
-    row = conn.execute(
-        f"SELECT {col} FROM {table} WHERE {col} LIKE ? ORDER BY {col} DESC LIMIT 1",
-        (f"{prefix}%",),
-    ).fetchone()
-    if not row or not row[0]:
-        n = 1
-    else:
-        m = re.search(r"(\d+)$", row[0])
-        n = int(m.group(1)) + 1 if m else 1
+def _next_id(conn, table: str, col: str, prefix: str, width: int) -> str:
+    """Return the next free ID like 'PL-####' or 'E-####' (Postgres)."""
+    n = conn.execute(
+        f"SELECT COALESCE(MAX(substring({col} FROM '[0-9]+$')::int), 0) + 1 "
+        f"FROM {table} WHERE {col} ~ %s",
+        (f"^{prefix}[0-9]+$",),
+    ).fetchone()[0]
     return f"{prefix}{n:0{width}d}"
 
 
-def make_point_gpkg_wkb(lon: float, lat: float, srs_id: int = 4326) -> bytes:
-    """Build a GeoPackage POINT WKB blob (matches cleanup_model.py convention)."""
-    flags = 0x01  # little-endian, no envelope
-    header = b"GP" + bytes([0, flags]) + struct.pack("<i", srs_id)
-    # WKB: byte_order=1 (LE), geom_type=1 (Point), then x,y
-    wkb = struct.pack("<BI", 1, 1) + struct.pack("<dd", lon, lat)
-    return header + wkb
-
-
-def resolve_places(conn: sqlite3.Connection, plan: Plan) -> None:
+def resolve_places(conn, plan: Plan) -> None:
     """Build plan.place_name_to_id and plan.new_place_rows.
 
     For each upsert_place op:
@@ -218,14 +205,14 @@ def resolve_places(conn: sqlite3.Connection, plan: Plan) -> None:
     """
     existing: dict[str, str] = {}
     for pid, name, std_name in conn.execute(
-        "SELECT place_id, name, std_name FROM Places"
+        "SELECT place_id, name, std_name FROM place"
     ):
         if name:
             existing[_norm(name)] = pid
         if std_name:
             existing.setdefault(_norm(std_name), pid)
 
-    next_id = lambda: _next_id(conn, "Places", "place_id", "PL-", 4)
+    next_id = lambda: _next_id(conn, "place", "place_id", "PL-", 4)
     # Track allocations within this run so consecutive new places don't
     # collide (we haven't committed yet so _next_id keeps returning the same).
     allocated: set[str] = set()
@@ -259,19 +246,16 @@ def resolve_places(conn: sqlite3.Connection, plan: Plan) -> None:
         plan.place_name_to_id[canonical_key] = new_pid
         if match_key:
             plan.place_name_to_id[match_key] = new_pid
-        # Lat/long: required for geom; warn if missing but still allow row.
+        # Lat/long feed geom (built in SQL via ST_MakePoint at insert time).
         lat = place.get("lat")
         lon = place.get("long")
-        wkb = None
-        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
-            wkb = make_point_gpkg_wkb(float(lon), float(lat))
-        elif lat is None and lon is None:
+        if lat is None and lon is None:
             plan.errors.append(
                 f"upsert_place #{p['__block_index']}: '{place['name']}' has no "
                 f"lat/long; can't build geometry. Provide coords or match an "
                 f"existing place."
             )
-        else:
+        elif not (isinstance(lat, (int, float)) and isinstance(lon, (int, float))):
             plan.errors.append(
                 f"upsert_place #{p['__block_index']}: lat/long must both be numeric"
             )
@@ -284,7 +268,6 @@ def resolve_places(conn: sqlite3.Connection, plan: Plan) -> None:
             "admin_hierarchy": place.get("admin_hierarchy"),
             "geocode_quality": place.get("geocode_quality") or "unknown",
             "notes": place.get("notes"),
-            "geom": wkb,
         })
 
     # Resolve event place_refs.
@@ -336,12 +319,12 @@ def resolve_places(conn: sqlite3.Connection, plan: Plan) -> None:
             p.setdefault("__resolved_place_ids", {})[ref_key] = resolved
 
 
-def resolve_events(conn: sqlite3.Connection, plan: Plan) -> None:
+def resolve_events(conn, plan: Plan) -> None:
     """Renumber dossier E-DD-* IDs to next free E-####, build participant rows."""
     allocated: set[str] = set()
 
     def take_next() -> str:
-        candidate = _next_id(conn, "Events", "event_id", "E-", 4)
+        candidate = _next_id(conn, "event", "event_id", "E-", 4)
         while candidate in allocated:
             m = re.search(r"(\d+)$", candidate)
             n = int(m.group(1)) + 1
@@ -350,7 +333,7 @@ def resolve_events(conn: sqlite3.Connection, plan: Plan) -> None:
         return candidate
 
     # Cache valid person_ids so we can flag bad participants.
-    valid_people = {r[0] for r in conn.execute("SELECT person_id FROM People")}
+    valid_people = {r[0] for r in conn.execute("SELECT person_id FROM person")}
 
     for p in plan.insert_event:
         ev = p["event"]
@@ -390,16 +373,13 @@ def resolve_events(conn: sqlite3.Connection, plan: Plan) -> None:
             })
 
 
-def resolve_person_updates(conn: sqlite3.Connection, plan: Plan) -> None:
+def resolve_person_updates(conn, plan: Plan) -> None:
     """Build the SQL update payloads, including append-to-existing logic."""
-    prev_factory = conn.row_factory
-    conn.row_factory = sqlite3.Row
     by_pid: dict[str, dict] = {}
-    for r in conn.execute(
-        "SELECT person_id, notes, source_summary, sex FROM People"
-    ):
-        by_pid[r["person_id"]] = dict(r)
-    conn.row_factory = prev_factory
+    with conn.cursor(row_factory=dict_row) as dcur:
+        dcur.execute("SELECT person_id, notes, source_summary, sex FROM person")
+        for r in dcur.fetchall():
+            by_pid[r["person_id"]] = dict(r)
 
     for p in plan.update_person:
         pid = p["person_id"]
@@ -427,7 +407,9 @@ def resolve_person_updates(conn: sqlite3.Connection, plan: Plan) -> None:
 
         if "notes_append" in s and s["notes_append"]:
             tag = f"[deep-dive {date.today().isoformat()}]"
-            line = f"{tag} {s['notes_append']}".strip()
+            # Idempotent: don't double-prepend if the dossier text already carries a tag.
+            raw = re.sub(r"^\[deep-dive \d{4}-\d{2}-\d{2}\]\s*", "", s["notes_append"].strip())
+            line = f"{tag} {raw}".strip()
             existing = (current.get("notes") or "").strip()
             updates["notes"] = f"{existing}\n{line}".strip() if existing else line
 
@@ -453,102 +435,58 @@ def resolve_person_updates(conn: sqlite3.Connection, plan: Plan) -> None:
 # Apply
 # ---------------------------------------------------------------------------
 
-def _capture_and_drop_triggers(cur: sqlite3.Cursor, tables: list[str]):
-    captured = []
-    for tbl in tables:
-        for name, sql in cur.execute(
-            "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?",
-            (tbl,),
-        ):
-            captured.append((name, sql))
-    for name, _ in captured:
-        cur.execute(f'DROP TRIGGER IF EXISTS "{name}"')
-    return captured
-
-
-def _recreate_triggers(cur: sqlite3.Cursor, captured):
-    for name, sql in captured:
-        if sql:
-            cur.execute(sql)
-
-
-def apply_plan(conn: sqlite3.Connection, plan: Plan) -> dict:
+def apply_plan(conn, plan: Plan) -> dict:
     cur = conn.cursor()
-    saved = _capture_and_drop_triggers(cur, ["Places", "Events", "People"])
 
-    # --- Insert new Places ---
+    # --- Insert new places (geom built from lat/long via PostGIS) ---
     for row in plan.new_place_rows:
         cur.execute(
-            'INSERT INTO Places ('
-            '  geom, place_id, name, std_name, lat, long, admin_hierarchy, '
-            '  geocode_quality, notes'
-            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            "INSERT INTO place "
+            "(place_id, name, std_name, geom, admin_hierarchy, geocode_quality, notes) "
+            "VALUES (%s, %s, %s, "
+            "  CASE WHEN %s IS NOT NULL AND %s IS NOT NULL "
+            "       THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326) END, "
+            "  %s, %s, %s)",
             (
-                row["geom"], row["place_id"], row["name"], row["std_name"],
-                row["lat"], row["long"], row["admin_hierarchy"],
-                row["geocode_quality"], row["notes"],
+                row["place_id"], row["name"], row["std_name"],
+                row["long"], row["lat"], row["long"], row["lat"],
+                row["admin_hierarchy"], row["geocode_quality"], row["notes"],
             ),
         )
-        if row["geom"] is not None:
-            new_fid = cur.lastrowid
-            cur.execute(
-                "INSERT INTO rtree_Places_geom (id, minx, maxx, miny, maxy) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (new_fid, row["long"], row["long"], row["lat"], row["lat"]),
-            )
 
-    # --- Insert new Events ---
+    # --- Insert new events (no PID_People; participants are separate) ---
     for row in plan.new_event_rows:
         cur.execute(
-            'INSERT INTO Events ('
-            '  event_id, title, event_type, date_start, date_end, '
-            '  date_granularity, place_id, importance, confidence, '
-            '  description, privacy_level, notes, PID_People'
-            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            "INSERT INTO event "
+            "(event_id, title, event_type, date_start, date_end, date_granularity, "
+            " place_id, importance, confidence, description, privacy_level, notes) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             (
                 row["event_id"], row["title"], row["event_type"],
                 row["date_start"], row["date_end"], row["date_granularity"],
                 row["place_id"], row["importance"], row["confidence"],
                 row["description"], row["privacy_level"], row["notes"],
-                row["PID_People"],
             ),
         )
 
-    # --- Insert EventParticipants ---
+    # --- Insert event participants (slim: event_id, person_id, role) ---
     for row in plan.new_participant_rows:
         cur.execute(
-            'INSERT INTO EventParticipants ('
-            '  event_id, person_id, role, event_type, title, date_start, '
-            '  date_end, place_id'
-            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            (
-                row["event_id"], row["person_id"], row["role"],
-                row["event_type"], row["title"], row["date_start"],
-                row["date_end"], row["place_id"],
-            ),
+            "INSERT INTO event_participant (event_id, person_id, role) "
+            "VALUES (%s, %s, %s) "
+            "ON CONFLICT (event_id, person_id, role) DO NOTHING",
+            (row["event_id"], row["person_id"], row["role"]),
         )
 
-    # --- Update People ---
+    # --- Update person ---
     for up in plan.person_updates:
         cols = up["columns"]
         if not cols:
             continue
-        set_clause = ", ".join(f"{c} = ?" for c in cols)
+        set_clause = ", ".join(f"{c} = %s" for c in cols)
         params = list(cols.values()) + [up["person_id"]]
-        cur.execute(
-            f"UPDATE People SET {set_clause} WHERE person_id = ?",
-            params,
-        )
+        cur.execute(f"UPDATE person SET {set_clause} WHERE person_id = %s", params)
 
-    # --- Patch gpkg_ogr_contents feature_count ---
-    for tbl in ("Places", "Events"):
-        n = cur.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
-        cur.execute(
-            "UPDATE gpkg_ogr_contents SET feature_count = ? WHERE table_name = ?",
-            (n, tbl),
-        )
-
-    _recreate_triggers(cur, saved)
     conn.commit()
 
     return {
@@ -615,15 +553,13 @@ def print_plan(plan: Plan, dossier: Path) -> None:
             print(f"   - {e}")
 
 
-def rebuild_derived_layers() -> int:
-    """Run cleanup_model.py Stage C only."""
-    if not CLEANUP_SCRIPT.exists():
-        print(f"WARN: {CLEANUP_SCRIPT} missing; skipping derived rebuild.")
+def backfill_provenance(person_id: str | None) -> int:
+    """Run parse_dossiers.py for this person so the dossier's §3 facts become
+    source/citation rows and §5/§6 become narrative/research_lead. Derived map
+    layers are live SQL views — no rebuild step is needed."""
+    if not PARSE_DOSSIERS.exists() or not person_id:
         return 0
-    cmd = [
-        sys.executable, str(CLEANUP_SCRIPT), "--apply",
-        "--skip-stage-b", "--skip-stage-d", "--skip-stage-e",
-    ]
+    cmd = [sys.executable, str(PARSE_DOSSIERS), person_id]
     print(f"\n+ {' '.join(cmd)}")
     return subprocess.call(cmd, cwd=REPO)
 
@@ -632,16 +568,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("person_id", nargs="?", help="e.g. P-0001")
     ap.add_argument("--dossier", type=Path, help="Explicit path to dossier .md")
-    ap.add_argument("--gpkg", type=Path, default=GPKG)
     ap.add_argument("--apply", action="store_true",
                     help="Commit changes (default is dry-run).")
-    ap.add_argument("--no-rebuild", action="store_true",
-                    help="Skip the derived-layer rebuild after apply.")
+    ap.add_argument("--no-backfill", action="store_true",
+                    help="Skip the parse_dossiers provenance backfill after apply.")
     args = ap.parse_args()
-
-    if not args.gpkg.exists():
-        print(f"GPKG not found: {args.gpkg}", file=sys.stderr)
-        return 1
 
     dossier = find_dossier(args.person_id, args.dossier)
     text = dossier.read_text(encoding="utf-8")
@@ -656,14 +587,10 @@ def main() -> int:
     plan.errors.extend(parse_errors)
     validate_shapes(plan)
 
-    conn = sqlite3.connect(args.gpkg)
-    try:
-        resolve_places(conn, plan)
-        resolve_events(conn, plan)
-        resolve_person_updates(conn, plan)
-    finally:
-        # Resolution is read-only; keep the connection open for apply.
-        pass
+    conn = connect(row_factory=tuple_row)
+    resolve_places(conn, plan)
+    resolve_events(conn, plan)
+    resolve_person_updates(conn, plan)
 
     print_plan(plan, dossier)
 
@@ -676,11 +603,8 @@ def main() -> int:
         conn.close()
         return 0
 
-    # Backup before mutating. The data-quality skill insists on this.
-    backup = args.gpkg.with_suffix(args.gpkg.suffix + ".bak")
-    shutil.copy2(args.gpkg, backup)
-    print(f"\nBackup: {_rel(backup)}")
-
+    print("\n(Tip: run scripts/backup_db.sh first for a pg_dump snapshot. "
+          "This apply is transactional — it rolls back on error.)")
     summary = apply_plan(conn, plan)
     conn.close()
 
@@ -688,10 +612,11 @@ def main() -> int:
     for k, v in summary.items():
         print(f"  {k}: {v}")
 
-    if not args.no_rebuild:
-        rc = rebuild_derived_layers()
+    pid = args.person_id or dossier.stem
+    if not args.no_backfill:
+        rc = backfill_provenance(pid)
         if rc != 0:
-            print(f"\nWARN: derived-layer rebuild exited with code {rc}")
+            print(f"\nWARN: provenance backfill exited with code {rc}")
             return rc
     return 0
 

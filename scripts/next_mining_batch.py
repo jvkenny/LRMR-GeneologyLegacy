@@ -16,10 +16,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sqlite3
-import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
+
+from lrgdm_db import connect
 
 REPO = Path(__file__).resolve().parents[1]
 MENTIONS_DIR = REPO / "reports" / "web_mentions"
@@ -35,27 +35,22 @@ def parse_year(s: str | None) -> int | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--gpkg", type=Path, default=REPO / "src/data/lrgdm.gpkg")
     ap.add_argument("--batch-size", type=int, default=5)
     args = ap.parse_args()
 
-    if not args.gpkg.exists():
-        print(json.dumps({"error": f"GPKG not found: {args.gpkg}"}), file=sys.stderr)
-        return 1
-
     MENTIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(args.gpkg)
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT person_id, primary_name, sex, birth_date, death_date, branch, "
-        "       birth_place_id, death_place_id, fs_id, source_summary, notes "
-        "FROM People WHERE birth_date IS NOT NULL OR death_date IS NOT NULL"
-    ).fetchall()
-
-    # Hydrate place names
-    places = {p["place_id"]: p["name"] for p in conn.execute("SELECT place_id, name FROM Places")}
-    conn.close()
+    with connect() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT person_id, primary_name, sex, birth_date, death_date, branch, "
+            "       birth_place_id, death_place_id, fs_id, source_summary, notes "
+            "FROM person WHERE birth_date IS NOT NULL OR death_date IS NOT NULL"
+        )
+        rows = cur.fetchall()
+        # Hydrate place names
+        cur.execute("SELECT place_id, name FROM place")
+        places = {p["place_id"]: p["name"] for p in cur.fetchall()}
 
     cutoff = date.today() - timedelta(days=MIN_DAYS_BETWEEN_MINES)
     candidates = []
