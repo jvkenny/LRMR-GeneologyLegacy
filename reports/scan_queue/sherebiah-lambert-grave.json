@@ -1,0 +1,79 @@
+{
+  "scan_id": "sherebiah-lambert-grave",
+  "status": "approved",
+
+  "scan": {
+    "inbox_file": "_drive_originals/Photographs/sherebiahlambertgrave.jpg",
+    "sha256": "cb74e48a6a91c5473020eb6d7101cc0325e36bce26d2d2c4fd8248a488d125be",
+    "bytes": 223497,
+    "mime_type": "image/jpeg",
+    "media_type": "image",
+    "suggested_blob_key": "scans/sherebiah-lambert-grave/sherebiahlambertgrave.jpg"
+  },
+
+  "source": {
+    "source_type": "grave_marker",
+    "title": "Grave marker — Sherebiah Lambert & wife Pamelia",
+    "informant": null,
+    "repository": null,
+    "url": null,
+    "citation": "Gravestone of Sherebiah Lambert (d. 1 May 1833, aged 74) and his wife Pamelia (d. 16 Jan 1845, aged 77); photograph of the monument (likely Canaan, Somerset County, Maine — burial place per DB, not stated on the stone).",
+    "source_date": "1845",
+    "accessed_date": "2026-05-30",
+    "confidence": "high",
+    "notes": "Photograph of a shared headstone. Inscription names Sherebiah Lambert and 'Pamelia, his wife'. Age-74-at-1833-death matches Sherebiah Lambert Jr (P-0105, b. 1759), not Sr (P-0138, b. 1728)."
+  },
+
+  "media": {
+    "title": "Sherebiah & Pamelia Lambert headstone",
+    "caption": "Shared grave marker; 'SHEREBIAH LAMBERT / DIED May 1, 1833 / Æ 74' over 'PAMELIA, his wife / Died Jan. 16, 1845 / Æ. 77'.",
+    "captured_date": null,
+    "role": "headstone"
+  },
+
+  "transcription": "SHEREBIAH LAMBERT\nDIED\nMay 1, 1833.\nÆ 74\nPAMELIA,\nhis wife\nDied Jan. 16, 1845.\nÆ. 77.",
+
+  "links": [
+    { "subject_type": "person", "subject_id": "P-0105", "role": "headstone" },
+    { "subject_type": "person", "subject_id": "P-0843", "role": "headstone" }
+  ],
+
+  "citations": [
+    {
+      "subject_type": "person",
+      "subject_id": "P-0105",
+      "subject_field": "death_date",
+      "claim": "Died 1 May 1833",
+      "confidence": "high",
+      "conflicts_flag": false,
+      "locator": "upper inscription, 'DIED May 1, 1833'"
+    },
+    {
+      "subject_type": "person",
+      "subject_id": "P-0105",
+      "subject_field": "birth_date",
+      "claim": "Aged 74 at death (Æ 74), implying birth c. 1758-1759 — consistent with recorded 11 Sep 1759",
+      "confidence": "med",
+      "conflicts_flag": false,
+      "locator": "age line 'Æ 74' beneath death date"
+    },
+    {
+      "subject_type": "person",
+      "subject_id": "P-0843",
+      "subject_field": "death_date",
+      "claim": "Died 16 Jan 1845",
+      "confidence": "high",
+      "conflicts_flag": false,
+      "locator": "lower inscription, 'PAMELIA, his wife / Died Jan. 16, 1845'"
+    },
+    {
+      "subject_type": "person",
+      "subject_id": "P-0843",
+      "subject_field": "birth_date",
+      "claim": "Aged 77 at death (Æ. 77), implying birth c. 1767-1768",
+      "confidence": "med",
+      "conflicts_flag": false,
+      "locator": "age line 'Æ. 77' beneath her death date"
+    }
+  ]
+}

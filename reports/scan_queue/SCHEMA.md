@@ -105,7 +105,7 @@ Every field is mapped to a real column in
 ### `source` — becomes one `source` row
 | field | type | maps to | notes |
 |---|---|---|---|
-| `source_type` | string | `source.source_type` | FK to `source_type(code)`. Seeded codes: `census`, `vital_record`, `birth_certificate`, `death_record`, `marriage_record`, `obituary`, `findagrave`, `ssdi`, `numident`, `oral_history`, `newspaper`, `book`, `website`, `photo`, `military`, `immigration`, `naturalization`, `directory`, `church_record`, `draft_registration`, `other`. `apply_scan.py` upserts unknown codes (like `parse_dossiers.py`). |
+| `source_type` | string | `source.source_type` | FK to `source_type(code)`. Seeded codes: `census`, `vital_record`, `birth_certificate`, `death_record`, `marriage_record`, `obituary`, `findagrave`, `grave_marker`, `ssdi`, `numident`, `oral_history`, `newspaper`, `book`, `website`, `photo`, `military`, `immigration`, `naturalization`, `directory`, `church_record`, `draft_registration`, `other`. `apply_scan.py` upserts unknown codes (like `parse_dossiers.py`). |
 | `title` | string | `source.title` | **required** (NOT NULL). |
 | `informant` | string\|null | `source.informant` | e.g. who gave an oral history. |
 | `repository` | string\|null | `source.repository` | holding institution. |

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict U71Twf6t0NgpLCvtogQxNm50zbzGoWX4Ux6O2HizZT12t1SK66EOF2nYDFezhWm
+\restrict Moxaqf5ZVUqBJfLud0Eqam7PmfGaCGntPb6KQQd3FJSRf8K8l8y5HLS5a0QwQPL
 
 -- Dumped from database version 18.3 (Homebrew)
 -- Dumped by pg_dump version 18.3 (Homebrew)
@@ -845,14 +845,11 @@ E-0025	Social Program Application	custom	1949-02	\N	\N	\N	\N	\N	\N	public	\N	202
 E-0026	Previous Residence	residence	\N	\N	\N	PL-0017	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0027	Birth of Leah Rae Mariotti	birth	1936-09-08	\N	\N	PL-0020	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0028	Death of Leah Rae Mariotti	death	2025-07-21	\N	\N	PL-0021	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
-E-0029	Birth of Earl Wayne Reed	birth	1899-07-19	\N	\N	PL-0015	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
-E-0030	Death of Earl Wayne Reed	death	1974-04-11	\N	\N	\N	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0031	\N	residence	1900	\N	\N	PL-0022	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0032	Military Draft Registration	custom	1918	\N	\N	PL-0023	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0033	\N	residence	1930	\N	\N	PL-0024	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0034	\N	residence	1940	\N	\N	\N	\N	\N	\N	public	[fixup 2026-05-26] place_id was `PL-0025` (no matching Places row)	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0035	Residence	residence	\N	\N	\N	PL-0026	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
-E-0036	Citizenship	custom	\N	\N	\N	\N	\N	\N	\N	public	[fixup 2026-05-26] place_id was `PL-0027` (no matching Places row)	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0037	Birth of Isabelle (Zika) Reed	birth	1913-12-03	\N	\N	PL-0016	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0038	Death of Isabelle (Zika) Reed	death	2006-10-13	\N	\N	PL-0028	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0039	\N	burial	2006	\N	\N	PL-0029	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
@@ -1011,7 +1008,6 @@ E-0191	\N	residence	1850	\N	\N	\N	\N	\N	\N	public	[fixup 2026-05-26] place_id wa
 E-0192	1854 & 1856 Iowa State Census — Canton Twp, Benton Co, IA	residence	1854-01-01	1856-12-31	year	PL-5233	\N	med	Abiram + Louisa enumerated in Canton Twp, Benton Co IA in both the 1854 and 1856 Iowa state censuses with one child. Family migrated as a 5-household group from Howard Co IN to Benton Co IA in fall 1853 on a military land warrant.	public	Source: Benton County Pioneers (iagenweb); index garbles surname once as 'Abinanse Lambert' — same household.	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0193	Wilson's Raid — Action at Maplesville, AL (Co. L, 3rd Iowa Cavalry)	military	1865-04-01	\N	day	PL-0014	\N	high	Abiram's Company L, 3rd Iowa Cavalry was specifically noted in action at Maplesville, Alabama on 1 April 1865 during Wilson's Selma/Macon Raid (the cavalry campaign that captured Selma the next day and Columbus GA / Macon shortly after). Regiment mustered out 9 Aug 1865 at Atlanta. NB: place_ref is set to Atlanta GA (existing PL-0014) since Maplesville is not in the GPKG; a future patch could add Maplesville AL as a Place if desired.	public	Source: Logan's Roster of Iowa Soldiers (3rd IA Cav) via iagenweb; NPS Battle Unit Details for 3rd IA Cav.	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0196	Burial of John Foulk Reed	burial	1952-04-01	\N	day	PL-5234	\N	high	Burial of Estelle's husband John Foulk Reed at Oakdale Memorial Gardens, Davenport, Scott County, Iowa, two days after his death on 30 Mar 1952. Per FS PID KLGC-TLC.	public	Source: FamilySearch extract 2026-05-26	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
-E-0197	Burial of Earl Wayne Reed Sr	burial	1974	\N	year	PL-5235	\N	high	Burial of Estelle's only known child, Earl Wayne Reed Sr, in Elgin, Kane County, Illinois, in 1974. Per FS PID M3P5-XF6.	public	Source: FamilySearch extract 2026-05-26. Specific cemetery within Elgin not given.	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0198	Marriage of Clarence D. Eichinger and Estella G. Reed	marriage	1912-09-18	\N	day	PL-5236	\N	high	Second marriage of Estelle Gertrude Lambert (then Estella G. Reed) to Clarence D. Eichinger of Lafayette, Indiana, in Algona, Kossuth County, Iowa. Her marital status on the license was reported as 'Widowed,' though her first husband John Foulk Reed actually lived until 1952 — almost certainly a polite misstatement to mask the divorce.	public	Source: FS Iowa Marriages 1809-1992 XJPF-H6J + Iowa County Marriages 1838-1934 XJ8W-XZ2	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0199	1900 US Census — Valley Twp, Guthrie Center, Guthrie Co, Iowa	census	1900	\N	year	PL-0065	\N	high	Reed household at Valley Township / Guthrie Center, Iowa: John F. Reed (head, 23), Gertrude E. Reed (wife, 19, b. Oct 1881 IA), Wayne E. Reed (son, 1, b. IA). Years married 1; number of living children 1. Sheet 15B, line 61, ED 66, household 367.	public	Source: FS 1900 US Census record M9KG-C8W	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0200	1925 Iowa State Census — Waterloo (4th Ward), Black Hawk Co	census	1925	\N	year	PL-5237	\N	high	Eichinger household at Waterloo (4th Ward), Black Hawk County, Iowa, house #134: Clarence Eichinger 41 (head), Gertrude Eichinger 40 (wife — Estelle), Ray Eichinger 11 (son), Edna Reed 18 (daughter — kept her Reed surname). Shows the Eichinger family had returned from Sioux Falls SD to Iowa by 1925.	public	Source: FS 1925 IA State Census record QKQW-X88X	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
@@ -1030,6 +1026,8 @@ E-0212	Marriage of John Ronald Reed Sr & Leah Rae Mariotti	marriage	1956	\N	year
 E-0213	Korean War U.S. military service	military	1952	1955	year	PL-5244	\N	med	Served in the U.S. military during the Korean War (family testimony, John Kenny, 2026). Family recalls training at Camp Pendleton, CA — a USMC base, implying U.S. Marine Corps. He turned 18 in July 1952; the war ran to the July 1953 armistice. Service window (1952-1955), branch (likely USMC), and base are ESTIMATED/UNCONFIRMED pending an NPRC service record, a county-recorded DD-214, his 1995 obituary, or a headstone marker.	public	Source: oral family history (proband John Kenny), relayed 2026-05-30. No documentary record located online; VA BIRLS Death File search returned nothing.	2026-05-30 09:21:56.321112-05	2026-05-30 09:21:56.321112-05
 E-0214	Occupation — Carpenter	occupation	1974-04-07	\N	day	PL-166025	\N	high	Recorded as a carpenter on his Cook County death record. Occupation consistent with a lifetime trade in the Chicago building boom of the 1920s-1950s.	public	Source: Illinois, Cook County Deaths, 1871-1998 (entry 02060).	2026-05-30 15:38:23.117619-05	2026-05-30 15:38:23.117619-05
 E-0215	1950 US Census — Chicago, Cook Co, IL	census	1950	\N	year	PL-0010	\N	high	Earl W. Reed enumerated in Chicago, Cook County, Illinois in the 1950 federal census — the household had moved from Cicero (1930, 1940) into the city proper by 1950.	public	Source: United States Census, 1950, attached to FS M3P5-XF6.	2026-05-30 15:38:23.117619-05	2026-05-30 15:38:23.117619-05
+E-0030	Death of Earl Wayne Reed	death	1974-04-07	\N	day	PL-166025	\N	\N	\N	public	\N	2026-05-30 09:21:56.321112-05	2026-05-30 15:42:11.880293-05
+E-0197	Burial of Earl Wayne Reed Sr	burial	1974-04-11	\N	day	PL-166026	\N	high	Buried 11 April 1974 at Lakewood Memorial Park, Elgin, Illinois (Martin Funeral Home Ltd). Per Cook County death record (Q2MN-CML4) and Find a Grave (QV2L-ZBPS).	public	Source: FamilySearch extract 2026-05-26. Specific cemetery within Elgin not given.	2026-05-30 09:21:56.321112-05	2026-05-30 15:42:11.880293-05
 \.
 
 
@@ -1069,14 +1067,12 @@ COPY public.event_participant (id, event_id, person_id, role) FROM stdin;
 32	E-0026	P-0056	\N
 33	E-0027	P-0055	\N
 34	E-0028	P-0055	\N
-35	E-0029	P-0062	\N
 36	E-0030	P-0062	\N
 37	E-0031	P-0062	\N
 38	E-0032	P-0062	\N
 39	E-0033	P-0062	\N
 40	E-0034	P-0062	\N
 41	E-0035	P-0062	\N
-42	E-0036	P-0062	\N
 43	E-0037	P-0058	\N
 44	E-0038	P-0058	\N
 45	E-0039	P-0058	\N
@@ -1494,7 +1490,7 @@ P-0070	John Talley Reed	male	1841-06-26	\N	PL-0327	1903-11-11	\N	PL-0328	high	pu
 P-0285	Timothy Allen	male	22 February 1691	\N	PL-12110	10 May 1755	\N	PL-2841	high	public	Paternal Reed	94QS-95F	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: 94QS-95F)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
 P-0303	Samuel Allen III	male	4 December 1660	\N	PL-12110	28 June 1750	\N	PL-12110	high	public	Paternal Reed	LTTF-WCP	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: LTTF-WCP)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
 P-0313	François Pouliot	male	27 February 1708	\N	PL-4471	29 March 1785	\N	PL-0506	high	public	Pouliot	L4QP-LDQ	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: L4QP-LDQ)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
-P-0062	Earl Wayne Reed Sr	male	1899-07-19	\N	PL-0208	1974-04-11	\N	PL-166025	high	public	Paternal Reed	M3P5-XF6	Married Isabelle Zika; lived in Chicago; possible WWI/WWII service.\n[deep-dive 2026-05-30] Carpenter by trade. Died 7 Apr 1974 at Elk Grove Village (Cook Co), IL; buried 11 Apr 1974 at Lakewood Memorial Park, Elgin (Martin Funeral Home). Last residence 4N711 Medinah Rd, Addison, DuPage Co. Migration: Guthrie Co IA (1899-1900) -> WWI draft Waukesha WI (1918) -> Cicero IL (1930, 1940) -> Chicago (1950) -> Addison/DuPage (by 1974). NOT his mother's only child — see [[P-0036]] (4 Reed children + 1 Eichinger half-sib).	\N	FamilySearch (FS PID: M3P5-XF6); FS attached records (16) inspected via authenticated Chrome MCP 2026-05-30: Iowa birth, 1900/1930/1940/1950 census, WWI (Waukesha WI) & WWII draft, two Cook Co birth certs (sons), NUMIDENT, Cook Co death cert (Q2MN-CML4), FindAGrave (QV2L-ZBPS).	2026-05-30 09:21:56.321112-05	2026-05-30 15:38:23.117619-05
+P-0062	Earl Wayne Reed Sr	male	1899-07-19	\N	PL-0208	1974-04-07	\N	PL-166025	high	public	Paternal Reed	M3P5-XF6	Married Isabelle Zika; lived in Chicago; possible WWI/WWII service.\n[deep-dive 2026-05-30] Carpenter by trade. Died 7 Apr 1974 at Elk Grove Village (Cook Co), IL; buried 11 Apr 1974 at Lakewood Memorial Park, Elgin (Martin Funeral Home). Last residence 4N711 Medinah Rd, Addison, DuPage Co. Migration: Guthrie Co IA (1899-1900) -> WWI draft Waukesha WI (1918) -> Cicero IL (1930, 1940) -> Chicago (1950) -> Addison/DuPage (by 1974). NOT his mother's only child — see [[P-0036]] (4 Reed children + 1 Eichinger half-sib).	\N	FamilySearch (FS PID: M3P5-XF6); FS attached records (16) inspected via authenticated Chrome MCP 2026-05-30: Iowa birth, 1900/1930/1940/1950 census, WWI (Waukesha WI) & WWII draft, two Cook Co birth certs (sons), NUMIDENT, Cook Co death cert (Q2MN-CML4), FindAGrave (QV2L-ZBPS).	2026-05-30 09:21:56.321112-05	2026-05-30 15:42:11.880293-05
 P-0321	Jean Pouliot	male	20 December 1674	\N	PL-16347	1 June 1745	\N	PL-4471	high	public	Pouliot	9WB4-TJK	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: 9WB4-TJK)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
 P-0337	Charles Pouliot	male	about April 1628	\N	PL-18465	about 6 August 1699	\N	PL-4471	high	public	Pouliot	LRS7-9X7	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: LRS7-9X7)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
 P-0369	Sergeant Joseph Barnard	male	20 June 1681	\N	PL-23227	12 July 1736	\N	PL-3186	high	public	Paternal Reed	G7GV-Q4N	Imported from FamilySearch extract on 2026-05-30.	\N	FamilySearch (FS PID: G7GV-Q4N)	2026-05-30 13:23:14.722755-05	2026-05-30 13:23:14.722755-05
@@ -3987,5 +3983,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE john IN SCHEMA public GRANT SELECT,INSERT,DELE
 -- PostgreSQL database dump complete
 --
 
-\unrestrict U71Twf6t0NgpLCvtogQxNm50zbzGoWX4Ux6O2HizZT12t1SK66EOF2nYDFezhWm
+\unrestrict Moxaqf5ZVUqBJfLud0Eqam7PmfGaCGntPb6KQQd3FJSRf8K8l8y5HLS5a0QwQPL
 

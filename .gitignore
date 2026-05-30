@@ -30,6 +30,7 @@ media/_inbox/*
 .azure.env
 
 # Google Drive-synced capture folder (phone photos of records); originals go to blob, not git
+_drive_originals/
 _drive_orginals/
 
 # QGIS project (binary .qgz) — lives in repo for co-location but not version-controlled

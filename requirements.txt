@@ -4,8 +4,9 @@
 #    or use a venv.)
 psycopg[binary]>=3.2
 
-# Optional, blob-storage backend only (apply_scan.py LRGDM_MEDIA_BACKEND=blob).
-# Not required: the default blob path shells out to the Azure CLI (`az storage
-# blob upload`). Install only if you prefer the SDK over the CLI.
-#   azure-storage-blob>=12
-#   azure-identity>=1.15
+# Blob-storage backend (apply_scan.py LRGDM_MEDIA_BACKEND=blob).
+# The SDK path authenticates via your existing `az login` (DefaultAzureCredential)
+# and avoids the CLI's account-key-query warning. (If absent, apply_scan still
+# falls back to shelling out to `az storage blob upload`.)
+azure-storage-blob>=12
+azure-identity>=1.15
