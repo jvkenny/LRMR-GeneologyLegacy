@@ -1,0 +1,1094 @@
+{
+  "generated": "2026-05-28",
+  "null_branch_count": 56,
+  "by_source": {
+    "fs_walk": 50,
+    "gpkg_rel": 2,
+    "fallback_surname": 2,
+    "unknown": 2
+  },
+  "by_branch": {
+    "Maternal Lambert": 10,
+    "Pouliot": 14,
+    "Zika": 14,
+    "Maternal Mariotti": 7,
+    "Paternal Reed": 9
+  },
+  "ambiguous_fs_couples": [
+    {
+      "coupleId": "L274-KK8_L274-K2C",
+      "gen": 1,
+      "parents": [
+        "L274-KK8",
+        "L274-K2C"
+      ],
+      "candidates": [
+        "L274-KNT",
+        "L274-KNT"
+      ],
+      "picked": "L274-KNT"
+    },
+    {
+      "coupleId": "L274-KLZ_L274-KGR",
+      "gen": 2,
+      "parents": [
+        "L274-KLZ",
+        "L274-KGR"
+      ],
+      "candidates": [
+        "L274-KK8",
+        "L274-K2C"
+      ],
+      "picked": "L274-KK8"
+    },
+    {
+      "coupleId": "GWCT-J3K_GWCT-VWD",
+      "gen": 6,
+      "parents": [
+        "GWCT-J3K",
+        "GWCT-VWD"
+      ],
+      "candidates": [
+        "LKTC-D4S",
+        "LBH1-TK2"
+      ],
+      "picked": "LKTC-D4S"
+    },
+    {
+      "coupleId": "P355-XWC_GSQJ-4RC",
+      "gen": 6,
+      "parents": [
+        "P355-XWC",
+        "GSQJ-4RC"
+      ],
+      "candidates": [
+        "GSQJ-M1C",
+        "P99J-6YC"
+      ],
+      "picked": "GSQJ-M1C"
+    },
+    {
+      "coupleId": "PMCT-5RX_PMCT-ZRN",
+      "gen": 6,
+      "parents": [
+        "PMCT-5RX",
+        "PMCT-ZRN"
+      ],
+      "candidates": [
+        "GSQJ-M1C",
+        "P99J-6YC"
+      ],
+      "picked": "GSQJ-M1C"
+    },
+    {
+      "coupleId": "GWCY-7JL_GWCY-M48",
+      "gen": 7,
+      "parents": [
+        "GWCY-7JL",
+        "GWCY-M48"
+      ],
+      "candidates": [
+        "GWCT-VWD",
+        "GS6J-92Z"
+      ],
+      "picked": "GWCT-VWD"
+    },
+    {
+      "coupleId": "P355-FRN_P35T-Q4G",
+      "gen": 7,
+      "parents": [
+        "P355-FRN",
+        "P35T-Q4G"
+      ],
+      "candidates": [
+        "P355-XWC",
+        "PMCT-5RX"
+      ],
+      "picked": "P355-XWC"
+    },
+    {
+      "coupleId": "P99N-2W1_P99N-599",
+      "gen": 7,
+      "parents": [
+        "P99N-2W1",
+        "P99N-599"
+      ],
+      "candidates": [
+        "P355-XWC",
+        "PMCT-5RX"
+      ],
+      "picked": "P355-XWC"
+    },
+    {
+      "coupleId": "L8J2-M2Y_L8J2-MLN",
+      "gen": 8,
+      "parents": [
+        "L8J2-M2Y",
+        "L8J2-MLN"
+      ],
+      "candidates": [
+        "991N-J11",
+        "LHFS-KPJ"
+      ],
+      "picked": "991N-J11"
+    },
+    {
+      "coupleId": "LCB7-QL6_LD9K-29K",
+      "gen": 8,
+      "parents": [
+        "LCB7-QL6",
+        "LD9K-29K"
+      ],
+      "candidates": [
+        "LHFS-KPJ",
+        "L5ZT-BM5"
+      ],
+      "picked": "LHFS-KPJ"
+    },
+    {
+      "coupleId": "L5ZR-PVC_L5ZR-LXX",
+      "gen": 8,
+      "parents": [
+        "L5ZR-PVC",
+        "L5ZR-LXX"
+      ],
+      "candidates": [
+        "LHFS-KPJ",
+        "L5ZT-BM5"
+      ],
+      "picked": "LHFS-KPJ"
+    },
+    {
+      "coupleId": "KK1G-S62_L8PT-TR4",
+      "gen": 8,
+      "parents": [
+        "KK1G-S62",
+        "L8PT-TR4"
+      ],
+      "candidates": [
+        "KCYF-LFN",
+        "LHJ9-SLF"
+      ],
+      "picked": "KCYF-LFN"
+    },
+    {
+      "coupleId": "GBF4-TKM_GBFH-HZV",
+      "gen": 8,
+      "parents": [
+        "GBF4-TKM",
+        "GBFH-HZV"
+      ],
+      "candidates": [
+        "GRLV-XZB",
+        "GBFH-79H"
+      ],
+      "picked": "GRLV-XZB"
+    }
+  ],
+  "proposals": [
+    {
+      "person_id": "P-0074",
+      "primary_name": "Helen Amelia Boles",
+      "fs_id": "29WD-T9P",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0074",
+        "P-0063"
+      ],
+      "path_names": [
+        "Helen Amelia Boles",
+        "Estella Gertrude Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0076",
+      "primary_name": "Henriette St. Louis",
+      "fs_id": "MGNK-YL2",
+      "proposed_branch": "Pouliot",
+      "source": "gpkg_rel",
+      "path": [
+        "P-0076",
+        "P-0068"
+      ],
+      "path_names": [
+        "Henriette St. Louis",
+        "Beatrice Delina Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0077",
+      "primary_name": "Josephine Riha Veta",
+      "fs_id": "LBH1-TK2",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0077",
+        "P-0064"
+      ],
+      "path_names": [
+        "Josephine Riha Veta",
+        "John Francis Zika"
+      ]
+    },
+    {
+      "person_id": "P-0086",
+      "primary_name": "Silas A. Boles",
+      "fs_id": "KN1Q-9L5",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0086",
+        "P-0074",
+        "P-0063"
+      ],
+      "path_names": [
+        "Silas A. Boles",
+        "Helen Amelia Boles",
+        "Estella Gertrude Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0088",
+      "primary_name": "Marie Anna \u0158\u00edhov\u00e1",
+      "fs_id": "GWCT-VWD",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0089",
+      "primary_name": "Franti\u0161ka Klusov\u00e1",
+      "fs_id": "GWCT-JQN",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0089",
+        "P-0077",
+        "P-0064"
+      ],
+      "path_names": [
+        "Franti\u0161ka Klusov\u00e1",
+        "Josephine Riha Veta",
+        "John Francis Zika"
+      ]
+    },
+    {
+      "person_id": "P-0090",
+      "primary_name": "Franti\u0161ek \u0158\u00edha",
+      "fs_id": "GS6J-92Z",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0090",
+        "P-0077",
+        "P-0064"
+      ],
+      "path_names": [
+        "Franti\u0161ek \u0158\u00edha",
+        "Josephine Riha Veta",
+        "John Francis Zika"
+      ]
+    },
+    {
+      "person_id": "P-0092",
+      "primary_name": "Martha Lovina Spears",
+      "fs_id": "KN1Q-GH1",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0092",
+        "P-0074",
+        "P-0063"
+      ],
+      "path_names": [
+        "Martha Lovina Spears",
+        "Helen Amelia Boles",
+        "Estella Gertrude Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0093",
+      "primary_name": "Joseph Filiatrault dit St. Louis",
+      "fs_id": "GYV7-TRD",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0093",
+        "P-0076",
+        "P-0068"
+      ],
+      "path_names": [
+        "Joseph Filiatrault dit St. Louis",
+        "Henriette St. Louis",
+        "Beatrice Delina Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0094",
+      "primary_name": "Julie Audet dit Lapointe",
+      "fs_id": "96JW-KFH",
+      "proposed_branch": "Pouliot",
+      "source": "gpkg_rel",
+      "path": [
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0097",
+      "primary_name": "Henriette Cheffre",
+      "fs_id": "GYVW-44Y",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0097",
+        "P-0076",
+        "P-0068"
+      ],
+      "path_names": [
+        "Henriette Cheffre",
+        "Henriette St. Louis",
+        "Beatrice Delina Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0101",
+      "primary_name": "Piera Bellandi",
+      "fs_id": "PC4W-R8N",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0101",
+        "P-0079"
+      ],
+      "path_names": [
+        "Piera Bellandi",
+        "Angiolo Pagni"
+      ]
+    },
+    {
+      "person_id": "P-0103",
+      "primary_name": "Nancy Walls",
+      "fs_id": "K4BN-VM7",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0103",
+        "P-0092",
+        "P-0074",
+        "P-0063"
+      ],
+      "path_names": [
+        "Nancy Walls",
+        "Martha Lovina Spears",
+        "Helen Amelia Boles",
+        "Estella Gertrude Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0104",
+      "primary_name": "Thomas Spear",
+      "fs_id": "K8F2-Y27",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0104",
+        "P-0092",
+        "P-0074",
+        "P-0063"
+      ],
+      "path_names": [
+        "Thomas Spear",
+        "Martha Lovina Spears",
+        "Helen Amelia Boles",
+        "Estella Gertrude Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0106",
+      "primary_name": "Permelia \"Millie\" Oaks",
+      "fs_id": "LZNM-W98",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0106",
+        "P-0084"
+      ],
+      "path_names": [
+        "Permelia \"Millie\" Oaks",
+        "David Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0108",
+      "primary_name": "Barbora Michal\u00ed\u010dkov\u00e1",
+      "fs_id": "GWCT-BFG",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0108",
+        "P-0087"
+      ],
+      "path_names": [
+        "Barbora Michal\u00ed\u010dkov\u00e1",
+        "Franti\u0161ek Z\u00edka"
+      ]
+    },
+    {
+      "person_id": "P-0109",
+      "primary_name": "Franti\u0161ek \u0158\u00edha",
+      "fs_id": "GWCY-7JL",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0109",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Franti\u0161ek \u0158\u00edha",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0111",
+      "primary_name": "Therese Denis Lapierre",
+      "fs_id": "KCYF-LFN",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0111",
+        "P-0091"
+      ],
+      "path_names": [
+        "Therese Denis Lapierre",
+        "Francois Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0112",
+      "primary_name": "Michel Olivier Audet",
+      "fs_id": "MJ8T-X8V",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0112",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Michel Olivier Audet",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0113",
+      "primary_name": "Marie Louise Tremblay",
+      "fs_id": "LHJ9-SLF",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0113",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Marie Louise Tremblay",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0114",
+      "primary_name": "Marie Zemanov\u00e1",
+      "fs_id": "GWCY-M48",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0114",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Marie Zemanov\u00e1",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0116",
+      "primary_name": "Elisabetta Giovacchini",
+      "fs_id": "P35T-Q4G",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0116",
+        "P-0099"
+      ],
+      "path_names": [
+        "Elisabetta Giovacchini",
+        "Giovanni Dini"
+      ]
+    },
+    {
+      "person_id": "P-0118",
+      "primary_name": "Maria Angiola Ercolini",
+      "fs_id": "GRLV-YDR",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0118",
+        "P-0096"
+      ],
+      "path_names": [
+        "Maria Angiola Ercolini",
+        "Pasqua Rosa Spadoni"
+      ]
+    },
+    {
+      "person_id": "P-0119",
+      "primary_name": "Annunziata Grossi",
+      "fs_id": "P99N-599",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0119",
+        "P-0099"
+      ],
+      "path_names": [
+        "Annunziata Grossi",
+        "Giovanni Dini"
+      ]
+    },
+    {
+      "person_id": "P-0123",
+      "primary_name": "Priscilla Foulk",
+      "fs_id": "K262-J62",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0123",
+        "P-0045"
+      ],
+      "path_names": [
+        "Priscilla Foulk",
+        "John Foulk Talley"
+      ]
+    },
+    {
+      "person_id": "P-0125",
+      "primary_name": "Sarah Brown",
+      "fs_id": "L8J2-MLN",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0125",
+        "P-0041"
+      ],
+      "path_names": [
+        "Sarah Brown",
+        "Sarah Dickerson"
+      ]
+    },
+    {
+      "person_id": "P-0126",
+      "primary_name": "Ann Patton",
+      "fs_id": "KVJJ-2F9",
+      "proposed_branch": "Paternal Reed",
+      "source": "fallback_surname",
+      "path": [
+        "P-0126"
+      ],
+      "path_names": [
+        "Ann Patton"
+      ]
+    },
+    {
+      "person_id": "P-0127",
+      "primary_name": "Richard R. Dickerson Sr.",
+      "fs_id": "L8J2-M2Y",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0127",
+        "P-0041"
+      ],
+      "path_names": [
+        "Richard R. Dickerson Sr.",
+        "Sarah Dickerson"
+      ]
+    },
+    {
+      "person_id": "P-0128",
+      "primary_name": "Simon Poulson lll",
+      "fs_id": "KVJJ-262",
+      "proposed_branch": "Paternal Reed",
+      "source": "fallback_surname",
+      "path": [
+        "P-0128"
+      ],
+      "path_names": [
+        "Simon Poulson lll"
+      ]
+    },
+    {
+      "person_id": "P-0130",
+      "primary_name": "Margaret Polk",
+      "fs_id": "GSMH-72F",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0130",
+        "P-0049"
+      ],
+      "path_names": [
+        "Margaret Polk",
+        "William Polk Willey"
+      ]
+    },
+    {
+      "person_id": "P-0131",
+      "primary_name": "Deliverance Owen",
+      "fs_id": "2CND-ZJ7",
+      "proposed_branch": null,
+      "source": "unknown",
+      "path": [
+        "P-0131"
+      ],
+      "path_names": [
+        "Deliverance Owen"
+      ]
+    },
+    {
+      "person_id": "P-0133",
+      "primary_name": "John Thomas Thurlow Jr",
+      "fs_id": "24C5-JCJ",
+      "proposed_branch": null,
+      "source": "unknown",
+      "path": [
+        "P-0133"
+      ],
+      "path_names": [
+        "John Thomas Thurlow Jr"
+      ]
+    },
+    {
+      "person_id": "P-0136",
+      "primary_name": "Lydia Hopkins",
+      "fs_id": "G8SF-YZH",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0136",
+        "P-0105"
+      ],
+      "path_names": [
+        "Lydia Hopkins",
+        "Sherebiah Lambert Jr"
+      ]
+    },
+    {
+      "person_id": "P-0137",
+      "primary_name": "Elizabeth Polly Palmer",
+      "fs_id": "2S2L-ZGM",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0137",
+        "P-0052"
+      ],
+      "path_names": [
+        "Elizabeth Polly Palmer",
+        "Elizabeth Allen"
+      ]
+    },
+    {
+      "person_id": "P-0138",
+      "primary_name": "Sherebiah Lambert Sr.",
+      "fs_id": "L7NQ-CKX",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0138",
+        "P-0105"
+      ],
+      "path_names": [
+        "Sherebiah Lambert Sr.",
+        "Sherebiah Lambert Jr"
+      ]
+    },
+    {
+      "person_id": "P-0139",
+      "primary_name": "Mabel Pinney",
+      "fs_id": "L5ZR-LXX",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0139",
+        "P-0047"
+      ],
+      "path_names": [
+        "Mabel Pinney",
+        "Samuel R Barnard"
+      ]
+    },
+    {
+      "person_id": "P-0140",
+      "primary_name": "Abigail Whitney Rand",
+      "fs_id": "LHKW-2DG",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0140",
+        "P-0106",
+        "P-0084"
+      ],
+      "path_names": [
+        "Abigail Whitney Rand",
+        "Permelia \"Millie\" Oaks",
+        "David Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0143",
+      "primary_name": "Lucretia Carroll Pinney",
+      "fs_id": "LD9K-29K",
+      "proposed_branch": "Paternal Reed",
+      "source": "fs_walk",
+      "path": [
+        "P-0143",
+        "P-0047"
+      ],
+      "path_names": [
+        "Lucretia Carroll Pinney",
+        "Samuel R Barnard"
+      ]
+    },
+    {
+      "person_id": "P-0144",
+      "primary_name": "Jonathan Abel Oakes",
+      "fs_id": "LZP7-DSJ",
+      "proposed_branch": "Maternal Lambert",
+      "source": "fs_walk",
+      "path": [
+        "P-0144",
+        "P-0106",
+        "P-0084"
+      ],
+      "path_names": [
+        "Jonathan Abel Oakes",
+        "Permelia \"Millie\" Oaks",
+        "David Lambert"
+      ]
+    },
+    {
+      "person_id": "P-0146",
+      "primary_name": "Franti\u0161ka Dole\u017ealov\u00e1",
+      "fs_id": "GWCT-1N1",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0146",
+        "P-0107"
+      ],
+      "path_names": [
+        "Franti\u0161ka Dole\u017ealov\u00e1",
+        "Martin Z\u00edka"
+      ]
+    },
+    {
+      "person_id": "P-0147",
+      "primary_name": "Anton\u00edn Zeman",
+      "fs_id": "GPDL-R79",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0147",
+        "P-0114",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Anton\u00edn Zeman",
+        "Marie Zemanov\u00e1",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0148",
+      "primary_name": "Franti\u0161ek Jan Michal\u00ed\u010dek",
+      "fs_id": "PH93-RMY",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0148",
+        "P-0108",
+        "P-0087"
+      ],
+      "path_names": [
+        "Franti\u0161ek Jan Michal\u00ed\u010dek",
+        "Barbora Michal\u00ed\u010dkov\u00e1",
+        "Franti\u0161ek Z\u00edka"
+      ]
+    },
+    {
+      "person_id": "P-0149",
+      "primary_name": "Eva Zemanov\u00e1",
+      "fs_id": "GT5S-14P",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0149",
+        "P-0114",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Eva Zemanov\u00e1",
+        "Marie Zemanov\u00e1",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0150",
+      "primary_name": "V\u00e1clav \u0158\u00edha",
+      "fs_id": "GPDL-25D",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0150",
+        "P-0109",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "V\u00e1clav \u0158\u00edha",
+        "Franti\u0161ek \u0158\u00edha",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0151",
+      "primary_name": "Magdalena Dufkov\u00e1",
+      "fs_id": "PH93-PYK",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0151",
+        "P-0108",
+        "P-0087"
+      ],
+      "path_names": [
+        "Magdalena Dufkov\u00e1",
+        "Barbora Michal\u00ed\u010dkov\u00e1",
+        "Franti\u0161ek Z\u00edka"
+      ]
+    },
+    {
+      "person_id": "P-0152",
+      "primary_name": "Magdalena \u0158\u00edhov\u00e1",
+      "fs_id": "GT5S-PGJ",
+      "proposed_branch": "Zika",
+      "source": "fs_walk",
+      "path": [
+        "P-0152",
+        "P-0109",
+        "P-0088",
+        "P-0075"
+      ],
+      "path_names": [
+        "Magdalena \u0158\u00edhov\u00e1",
+        "Franti\u0161ek \u0158\u00edha",
+        "Marie Anna \u0158\u00edhov\u00e1",
+        "Anton Zika"
+      ]
+    },
+    {
+      "person_id": "P-0153",
+      "primary_name": "Genevieve Godbout",
+      "fs_id": "LJYN-TJY",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0153",
+        "P-0110"
+      ],
+      "path_names": [
+        "Genevieve Godbout",
+        "Pierre Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0155",
+      "primary_name": "Marie Louise St-Mars",
+      "fs_id": "L8PT-TR4",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0155",
+        "P-0111",
+        "P-0091"
+      ],
+      "path_names": [
+        "Marie Louise St-Mars",
+        "Therese Denis Lapierre",
+        "Francois Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0156",
+      "primary_name": "Jacques Denis",
+      "fs_id": "KK1G-S62",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0156",
+        "P-0111",
+        "P-0091"
+      ],
+      "path_names": [
+        "Jacques Denis",
+        "Therese Denis Lapierre",
+        "Francois Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0157",
+      "primary_name": "Marie Angelique P\u00e9pin dit Lachance",
+      "fs_id": "LRD1-TMD",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0157",
+        "P-0113",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Marie Angelique P\u00e9pin dit Lachance",
+        "Marie Louise Tremblay",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0158",
+      "primary_name": "Guillaume Audet",
+      "fs_id": "LRQ4-GD9",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0158",
+        "P-0112",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Guillaume Audet",
+        "Michel Olivier Audet",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0159",
+      "primary_name": "Jacques Tremblay",
+      "fs_id": "KLLJ-SJR",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0159",
+        "P-0113",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Jacques Tremblay",
+        "Marie Louise Tremblay",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0160",
+      "primary_name": "Marie Angelique Delage",
+      "fs_id": "KN1W-474",
+      "proposed_branch": "Pouliot",
+      "source": "fs_walk",
+      "path": [
+        "P-0160",
+        "P-0112",
+        "P-0094",
+        "P-0078"
+      ],
+      "path_names": [
+        "Marie Angelique Delage",
+        "Michel Olivier Audet",
+        "Julie Audet dit Lapointe",
+        "Paul Pouliot"
+      ]
+    },
+    {
+      "person_id": "P-0162",
+      "primary_name": "Maria Pasqua Baldi",
+      "fs_id": "GRLP-TVD",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0162",
+        "P-0117"
+      ],
+      "path_names": [
+        "Maria Pasqua Baldi",
+        "Pier Domenico Spadoni"
+      ]
+    },
+    {
+      "person_id": "P-0164",
+      "primary_name": "UMILTA' GIACOMELLI",
+      "fs_id": "GBFH-HZV",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0164",
+        "P-0117"
+      ],
+      "path_names": [
+        "UMILTA' GIACOMELLI",
+        "Pier Domenico Spadoni"
+      ]
+    },
+    {
+      "person_id": "P-0166",
+      "primary_name": "CATERINA PARLANTI",
+      "fs_id": "PM4B-ZZR",
+      "proposed_branch": "Maternal Mariotti",
+      "source": "fs_walk",
+      "path": [
+        "P-0166",
+        "P-0120"
+      ],
+      "path_names": [
+        "CATERINA PARLANTI",
+        "MARIA UMILTA' PORCIANI"
+      ]
+    }
+  ]
+}
