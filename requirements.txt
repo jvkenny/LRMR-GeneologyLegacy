@@ -1,0 +1,5 @@
+# LRGDM Python dependencies (Postgres-backed tooling)
+# Install:  python3 -m pip install -r requirements.txt
+#   (Homebrew python is PEP-668 externally-managed; add --break-system-packages
+#    or use a venv.)
+psycopg[binary]>=3.2

@@ -109,14 +109,15 @@ def render_citations(escaped_text):
 
 
 def gpkg_life_dates(person_id):
-    if not GPKG_PATH.exists():
-        return ""
-    con = sqlite3.connect(str(GPKG_PATH))
-    row = con.execute(
-        "SELECT birth_date, death_date FROM People WHERE person_id=?",
-        (person_id,),
-    ).fetchone()
-    con.close()
+    # Source of truth is Postgres (db lrgdm); $LRGDM_PG overrides the conninfo.
+    import os
+    import psycopg
+
+    with psycopg.connect(os.environ.get("LRGDM_PG", "dbname=lrgdm")) as con:
+        row = con.execute(
+            "SELECT birth_date, death_date FROM person WHERE person_id=%s",
+            (person_id,),
+        ).fetchone()
     if not row:
         return ""
 
