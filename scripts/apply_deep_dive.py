@@ -350,7 +350,7 @@ def resolve_events(conn, plan: Plan) -> None:
             "importance": ev.get("importance"),
             "confidence": ev.get("confidence"),
             "description": ev.get("description"),
-            "privacy_level": ev.get("privacy_level"),
+            "privacy_level": ev.get("privacy_level") or "public",
             "notes": ev.get("notes"),
             "PID_People": None,  # use EventParticipants instead
         })
