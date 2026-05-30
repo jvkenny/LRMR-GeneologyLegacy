@@ -1,10 +1,10 @@
 {
   "generated": "2026-05-30",
-  "extract": "src/data/familysearch/extract_L274-KNT_2026-05-26.json",
+  "extract": "src/data/familysearch/extract_L274-KNT_2026-05-30-deep.json",
   "database": "lrgdm",
   "min_score": 0.55,
-  "already_linked_count": 129,
-  "unlinked_count": 16,
+  "already_linked_count": 130,
+  "unlinked_count": 17,
   "results": [
     {
       "person_id": "P-0004",
@@ -12,7 +12,35 @@
       "birth_date": "circa 1846",
       "death_date": "1880-12-20",
       "branch": "Paternal Reed by marriage",
-      "candidates": []
+      "candidates": [
+        {
+          "fs_pid": "GZ18-J98",
+          "fs_name": "Elizabeth",
+          "fs_birth_year": null,
+          "fs_death_year": 1678,
+          "fs_birth_place": "England",
+          "score": 0.67,
+          "reason": "name sim 0.78"
+        },
+        {
+          "fs_pid": "LTCJ-BFB",
+          "fs_name": "Elizabeth Hardy",
+          "fs_birth_year": 1667,
+          "fs_death_year": 1715,
+          "fs_birth_place": "Somerset, Maryland, United States",
+          "score": 0.577,
+          "reason": "name sim 0.83; birth year mismatch (1846 vs 1667)"
+        },
+        {
+          "fs_pid": "K2SJ-LN2",
+          "fs_name": "Elizabeth Drake",
+          "fs_birth_year": 1653,
+          "fs_death_year": 1711,
+          "fs_birth_place": "Piscataway, Middlesex, New Jersey, British Colonial America",
+          "score": 0.577,
+          "reason": "name sim 0.83; birth year mismatch (1846 vs 1653)"
+        }
+      ]
     },
     {
       "person_id": "P-0002",
@@ -76,7 +104,35 @@
       "birth_date": "1805-05-20",
       "death_date": "1858-06-13",
       "branch": "Pouliot",
-      "candidates": []
+      "candidates": [
+        {
+          "fs_pid": "L4QP-LDQ",
+          "fs_name": "Fran\u00e7ois Pouliot",
+          "fs_birth_year": 1708,
+          "fs_death_year": 1785,
+          "fs_birth_place": "Saint-Laurent, Saint-Laurent, Qu\u00e9bec, Canada, New France",
+          "score": 0.68,
+          "reason": "name sim 1.00; birth year mismatch (1805 vs 1708)"
+        },
+        {
+          "fs_pid": "LV4M-NGZ",
+          "fs_name": "Fran\u00e7oise Touzelet",
+          "fs_birth_year": null,
+          "fs_death_year": null,
+          "fs_birth_place": "France",
+          "score": 0.659,
+          "reason": "name sim 0.76"
+        },
+        {
+          "fs_pid": "LWV2-QR5",
+          "fs_name": "Johan Pouliot",
+          "fs_birth_year": null,
+          "fs_death_year": null,
+          "fs_birth_place": "France",
+          "score": 0.614,
+          "reason": "name sim 0.69"
+        }
+      ]
     },
     {
       "person_id": "P-0020",
@@ -108,7 +164,17 @@
       "birth_date": "1738",
       "death_date": "1806",
       "branch": "Maternal Lambert",
-      "candidates": []
+      "candidates": [
+        {
+          "fs_pid": "LYP7-2BX",
+          "fs_name": "Elizabeth Davis",
+          "fs_birth_year": 1738,
+          "fs_death_year": 1819,
+          "fs_birth_place": null,
+          "score": 0.64,
+          "reason": "name sim 0.40; birth year exact (1738)"
+        }
+      ]
     },
     {
       "person_id": "P-0013",
@@ -132,6 +198,14 @@
       "birth_date": "1873",
       "death_date": "circa 1905",
       "branch": "Paternal Reed",
+      "candidates": []
+    },
+    {
+      "person_id": "P-0167",
+      "primary_name": "Gerald Arthur Kenny",
+      "birth_date": "3 November 1961",
+      "death_date": "17 October 2025",
+      "branch": "Paternal Kenny",
       "candidates": []
     }
   ]

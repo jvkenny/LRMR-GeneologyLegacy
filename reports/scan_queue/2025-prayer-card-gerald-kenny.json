@@ -1,0 +1,60 @@
+{
+  "scan_id": "2025-prayer-card-gerald-kenny",
+  "status": "approved",
+
+  "scan": {
+    "inbox_file": "_drive_orginals/Geraldprayercard.pdf",
+    "sha256": "6d0e98301e9130a9f6cef31c2eea8c7276daa37b68450ae86764b0daa04f278c",
+    "bytes": 198967,
+    "mime_type": "application/pdf",
+    "media_type": "pdf",
+    "suggested_blob_key": "scans/2025-prayer-card-gerald-kenny/Geraldprayercard.pdf"
+  },
+
+  "source": {
+    "source_type": "other",
+    "title": "Memorial prayer card — Gerald Arthur Kenny (1961–2025)",
+    "informant": null,
+    "repository": "Williams-Kampp Funeral Home",
+    "url": null,
+    "citation": "Memorial/prayer card for Gerald Arthur Kenny, b. 3 Nov 1961, d. 17 Oct 2025; Williams-Kampp Funeral Home. Scanned from family records (Google Drive _drive_orginals), 2026-05-30.",
+    "source_date": "2025",
+    "accessed_date": "2026-05-30",
+    "confidence": "high",
+    "notes": "Printed funeral prayer card, fully legible. Celtic cross + Irish blessing (\"May the road rise up to meet you\") indicate Irish Catholic. NOTE: source_type set to 'other' — consider adding a dedicated 'prayer_card' / 'funeral_card' code. Subject Gerald Arthur Kenny is NOT yet a person in the tree (see .md)."
+  },
+
+  "media": {
+    "title": "Gerald Arthur Kenny — memorial prayer card",
+    "caption": "Funeral prayer card, Williams-Kampp Funeral Home, 2025",
+    "captured_date": "2025",
+    "role": "document_scan"
+  },
+
+  "transcription": "In Loving Memory of\nGerald Arthur Kenny\nBorn\nNOVEMBER 3, 1961\nAt Peace\nOCTOBER 17, 2025\n\n[Celtic cross illustration]\n\nMay the road rise up\nto meet you,\nMay the wind be always\nat your back,\nMay the sun shine warm\nupon your face,\nAnd the rain fall soft\nupon your fields,\nAnd until we meet again,\nMay God hold you\nin the palm of His hand.\n\nWilliams-Kampp Funeral Home",
+
+  "links": [
+    { "subject_type": "person", "subject_id": "P-0167", "role": "document_scan" }
+  ],
+
+  "citations": [
+    {
+      "subject_type": "person",
+      "subject_id": "P-0167",
+      "subject_field": "birth_date",
+      "claim": "Born 3 November 1961",
+      "confidence": "high",
+      "conflicts_flag": false,
+      "locator": "card body: 'Born NOVEMBER 3, 1961'"
+    },
+    {
+      "subject_type": "person",
+      "subject_id": "P-0167",
+      "subject_field": "death_date",
+      "claim": "Died ('At Peace') 17 October 2025",
+      "confidence": "high",
+      "conflicts_flag": false,
+      "locator": "card body: 'At Peace OCTOBER 17, 2025'"
+    }
+  ]
+}

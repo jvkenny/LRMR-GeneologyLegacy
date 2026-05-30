@@ -65,6 +65,11 @@ MERGES = [
     # Relationships, 5+9 Event ties); P-0063 was the FS-extract stub with
     # zero downstream references. Winner = the curated row, loser = the stub.
     {"loser": "P-0063", "winner": "P-0036", "label": "Estelle Gertrude Lambert"},
+    # surfaced 2026-05-30 (deep FS ingest review): pre-existing dups, loser=non-fs
+    # curated row, winner=fs-linked row. fs_id is canonical identity.
+    {"loser": "P-0001", "winner": "P-0082", "label": "Bonum/Bonam Reed (1816)"},
+    {"loser": "P-0025", "winner": "P-0091", "label": "François Pouliot (1805)"},
+    {"loser": "P-0027", "winner": "P-0093", "label": "Joseph Filiatrault dit St. Louis"},
 ]
 
 

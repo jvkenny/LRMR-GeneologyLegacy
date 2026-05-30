@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-30T15:36:20+00:00",
+  "generated_at": "2026-05-30T18:44:06+00:00",
   "proband_fs_id": "L274-KNT",
-  "year_min": 1710,
+  "year_min": 1515,
   "year_max": 2025,
   "eras": [
     "Colonial Era",
@@ -14,16 +14,16 @@
   ],
   "branches": [
     "Paternal Reed",
-    "Maternal Mariotti",
     "Pouliot",
+    "Maternal Mariotti",
     "Zika",
     "Maternal Lambert",
-    "Paternal Kroll",
+    "Paternal Kenny",
     "Reed-Zika",
-    "Paternal Reed by marriage",
-    "Paternal Kenny"
+    "Paternal Kroll",
+    "Paternal Reed by marriage"
   ],
-  "person_count": 145,
-  "place_count": 199,
+  "person_count": 818,
+  "place_count": 647,
   "event_count": 211
 }

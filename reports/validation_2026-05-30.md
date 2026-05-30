@@ -1,15 +1,15 @@
 # LRGDM Validation — 2026-05-30
 
 - Source: Postgres db `lrgdm`
-- Total findings: **60**
+- Total findings: **58**
 
 ## Summary
 
 | Section | Count |
 |---|---:|
-| person — missing required fields | 2 |
+| person — missing required fields | 1 |
 | person — birth/death date ordering | 0 |
-| person — duplicate (name, birth year) pairs | 1 |
+| person — duplicate (name, birth year) pairs | 0 |
 | person — fs_id linked to multiple rows | 0 |
 | place — coordinate problems | 0 |
 | place — low/missing geocode_quality | 0 |
@@ -19,12 +19,7 @@
 
 ## person — missing required fields
 
-- `P-0131` (Deliverance Owen) has no branch
-- `P-0133` (John Thomas Thurlow Jr) has no branch
-
-## person — duplicate (name, birth year) pairs
-
-- `P-0091` (Francois Pouliot), `P-0025` (François Pouliot) share name `francois pouliot` and birth year 1805
+- `P-0168` (John Kenny) has no branch
 
 ## place — not referenced by any person or event
 

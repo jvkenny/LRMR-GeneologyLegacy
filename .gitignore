@@ -17,3 +17,20 @@ __pycache__/
 # Source/backup photo originals — only the optimized JPG ships
 docs/images/*.original.*
 docs/images/*.png
+
+# Scan inbox (media/_inbox/) is a staging drop-zone, NOT durable storage.
+# Ignore all binaries dropped here; apply_scan.py moves originals to their
+# permanent LFS-tracked home (media/<source_id>/) or to blob storage.
+# Only README.md and .gitkeep are tracked.
+media/_inbox/*
+!media/_inbox/.gitkeep
+!media/_inbox/README.md
+
+# Azure resource credentials (never commit)
+.azure.env
+
+# Google Drive-synced capture folder (phone photos of records); originals go to blob, not git
+_drive_orginals/
+
+# QGIS project (binary .qgz) — lives in repo for co-location but not version-controlled
+qgis/*.qgz

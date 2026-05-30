@@ -3,3 +3,9 @@
 #   (Homebrew python is PEP-668 externally-managed; add --break-system-packages
 #    or use a venv.)
 psycopg[binary]>=3.2
+
+# Optional, blob-storage backend only (apply_scan.py LRGDM_MEDIA_BACKEND=blob).
+# Not required: the default blob path shells out to the Azure CLI (`az storage
+# blob upload`). Install only if you prefer the SDK over the CLI.
+#   azure-storage-blob>=12
+#   azure-identity>=1.15

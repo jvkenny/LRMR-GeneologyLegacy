@@ -17,10 +17,10 @@ viewer published via GitHub Pages.
 - **Repo:** https://github.com/jvkenny/LRMR-GeneologyLegacy
 - **Source of truth:** Postgres db **`lrgdm`** (local, `localhost:5432`; app role `lrgdm_rw`)
 - **Schema & setup:** `db/README.md` + `db/migrations/0001…0006` (+ `db/load_from_gpkg.sql` ETL)
-- **Backups:** `pg_dump` snapshots in `db/backups/*.sql` (committed)
+- **Backups:** `scripts/backup_db.sh` — local `pg_dump` → `db/backups/*.sql` (committed) **+ offsite to Azure Blob `db-backups/`** (timestamped, retained). **Run it before any DB change** (it's required to push to Azure by default; `LRGDM_BACKUP_SKIP_AZURE=1` only for offline). Azure infra: `.azure.env` / [[project_lrgdm_azure]].
 - **Viewer:** `docs/index.html` (Leaflet, GH Pages), fed by `docs/data/*.geojson`
 - **Proband:** John Kenny, FamilySearch PID **L274-KNT** (b. 1995)
-- **QGIS project:** `~/dev/bwca-trip-2026/qgis/project/LRGDM.qgz` — connect it to the `lrgdm` Postgres connection
+- **QGIS project:** `qgis/LRGDM.qgz` (in-repo, gitignored) — connect it to the `lrgdm` Postgres connection
 - **Legacy snapshot:** `backup_gpkg/lrgdm-legacy-2026-05-30.gpkg` (Git LFS) — frozen pre-migration GeoPackage; never the live data
 
 ## Data model (Postgres)
@@ -85,6 +85,7 @@ dry-run; pass `--apply` to commit. Run `scripts/backup_db.sh` first for a
 | `generate_narratives.py` | Dossiers + Postgres → `docs/narratives/*.html` + index. |
 | `build_site.sh` | Runs both of the above (local site rebuild). |
 | `add_media.py` | Add a scan/photo, record + link it (`media`/`media_link`). |
+| `apply_scan.py` | Apply an approved scan sidecar (`reports/scan_queue/<scan_id>.json`) → `source`/`media`/`media_link`/`citation`; stores the original (local or Azure blob). |
 | `parse_dossiers.py` | Dossiers → `source`/`citation`/`narrative`/`research_lead`. |
 | `apply_deep_dive.py` | Apply a deep-dive dossier's patches, then backfill provenance via `parse_dossiers`. |
 | `ingest_familysearch.py` | Ingest a FamilySearch extract (new `person`/`place` rows). |
@@ -95,7 +96,7 @@ dry-run; pass `--apply` to commit. Run `scripts/backup_db.sh` first for a
 | `merge_duplicate_persons.py` | Merge duplicate `person` rows (repoint refs, delete loser). |
 | `validate_gpkg.py` | DQ checks → `reports/validation_<DATE>.md` (read-only). Name kept for back-compat; reads Postgres. |
 | `next_mining_batch.py` | Pick deceased ancestors to web-mine (read-only). |
-| `backup_db.sh` | `pg_dump` snapshot → `db/backups/`. |
+| `backup_db.sh` | **Pre-change backup**: `pg_dump` → `db/backups/` **and** push to Azure Blob `db-backups/`. Run before every DB mutation. |
 
 Note: the `lrgdm-deep-dive` / `lrgdm-data-quality` / `lrgdm-ingest-fs` /
 `lrgdm-pedigree-walk` **skills** invoke these (now Postgres) scripts. The
@@ -111,6 +112,27 @@ endpoints to `~/Downloads`; an osascript bypass moves the file into
 `src/data/familysearch/` (Bash is sandboxed off `~/Downloads`);
 `reconcile_familysearch.py` proposes matches, then `ingest_familysearch.py`
 adds new ancestors **to Postgres**.
+
+## Scan ingest (document digitization)
+
+Phase-0 pipeline for turning scanned paper records / photos into provenance rows:
+
+1. Drop raw scans into `media/_inbox/` (a staging drop-zone; binaries are
+   git-ignored, **not** LFS storage — see `media/_inbox/README.md`).
+2. Run the **`lrgdm-ingest-scans`** skill: the Claude session reads each image
+   with vision, transcribes it verbatim, and writes a review sidecar
+   (`reports/scan_queue/<scan_id>.json` + `.md`, schema in
+   `reports/scan_queue/SCHEMA.md`, `status: "proposed"`). Extraction runs on the
+   subscription — `apply_scan.py` does no model calls.
+3. Review/correct the sidecar, flip `status` to `"approved"`, then
+   `python3 scripts/apply_scan.py <scan_id> --apply` (dry-run by default).
+   It mints `source` (`S-####`) + `media` (`M-####`), dedupes by sha256, stores
+   the original, and writes `media_link` + `citation` rows in one transaction.
+
+Storage backend is pluggable via env (so it works before Azure exists):
+`LRGDM_MEDIA_BACKEND=local` (default; copies to `media/<source_id>/`) or `blob`
+(uploads via `az`/`azure-storage-blob`; requires `LRGDM_BLOB_ACCOUNT` +
+`LRGDM_BLOB_CONTAINER`, optional `LRGDM_BLOB_PREFIX`).
 
 ## Scheduled automation
 
@@ -134,7 +156,10 @@ Restart: `launchctl bootout/bootstrap gui/$(id -u) <plist>`.
 
 ## What's next
 
-1. **June 7 records scan** → drop images/scans via `add_media.py`; add maiden/nickname rows to `person_name`.
+1. **June 7 records scan** → drop images/scans into `media/_inbox/`, run the
+   **`lrgdm-ingest-scans`** skill (see below), review/approve the sidecars, then
+   `apply_scan.py --apply`. (A single known file with no transcription can still
+   go straight in via `add_media.py`.) Add maiden/nickname rows to `person_name`.
 3. **Photo overlay in the viewer** — surface `media`/`media_link` portraits in `docs/index.html` popups.
 4. **Branch assignment** for NULL-branch ancestors; **dedup** remaining duplicate persons (now via SQL against Postgres).
 5. **Time-slicing view** — parameterized year filter over the `v_*` layers.
@@ -144,7 +169,7 @@ Restart: `launchctl bootout/bootstrap gui/$(id -u) <plist>`.
 - **Postgres `lrgdm` is the source of truth.** The GPKG is frozen; don't edit it expecting the site/DB to follow.
 - Edit base tables (in QGIS or SQL); **never edit the `v_*` views** (read-only, recomputed).
 - Rebuild the site with `scripts/build_site.sh`, then commit `docs/` — do not hand-edit `docs/data/*.geojson`.
-- **Back up with `pg_dump`** to `db/backups/` and commit it (the data is no longer a file in git).
+- **Always back up before changing the DB** — run `scripts/backup_db.sh` first. It snapshots locally to `db/backups/` (commit it) **and pushes offsite to Azure Blob `db-backups/`**. The Azure push is required by default; don't skip it except genuinely offline (`LRGDM_BACKUP_SKIP_AZURE=1`).
 - Never `git push --force` to main (it desyncs the published viewer).
 - `media/**` binaries are **Git LFS**-tracked (see `.gitattributes`).
 
