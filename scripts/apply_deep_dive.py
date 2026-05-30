@@ -5,9 +5,10 @@ Reads `reports/deep-dives/<person_id>.md`, parses every fenced JSON block
 tagged ```json deep-dive-patch, validates the patch set, and on --apply
 writes new Places + Events + EventParticipants and updates People rows.
 
-Dry-run by default. Always shows the diff before committing. After --apply
-commits, runs Stage C of cleanup_model.py to rebuild the derived spatial
-layers.
+Dry-run by default. Always shows the diff before committing. The derived map
+layers are live SQL views, so there is no rebuild step. After --apply commits,
+runs parse_dossiers.py to backfill provenance (sources/citations/narrative/
+research leads) from the dossier.
 
 Patch op types (schema documented in scripts/deep_dive_template.md):
   - upsert_place       — match by name (or create); generate PL-#### + WKB
@@ -175,7 +176,7 @@ def validate_shapes(plan: Plan) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Resolve against the live GPKG
+# Resolve place_refs against the live Postgres `place` table (the database)
 # ---------------------------------------------------------------------------
 
 def _norm(s: str | None) -> str:

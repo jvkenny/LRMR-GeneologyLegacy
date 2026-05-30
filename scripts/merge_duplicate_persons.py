@@ -31,10 +31,6 @@ from psycopg.rows import tuple_row
 
 from lrgdm_db import connect
 import sys
-from pathlib import Path
-
-REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 
 MERGES = [
     {"loser": "P-0005", "winner": "P-0040", "label": "Benjamin Reed"},

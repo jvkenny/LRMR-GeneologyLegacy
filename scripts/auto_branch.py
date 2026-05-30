@@ -16,9 +16,9 @@ Strategy (in order of preference):
 
 Two-step protocol:
   default              writes reports/auto_branch_<DATE>.{md,json}
-  --apply              writes the GPKG branch column
+  --apply              commit the person.branch updates to Postgres
 
-Backs up GPKG to .pre-branch.bak before --apply.
+Derived map layers are live SQL views — no rebuild step.
 """
 from __future__ import annotations
 
@@ -34,7 +34,6 @@ from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 EXTRACT_DIR = REPO / "src/data/familysearch"
 PROBAND_PID = "L274-KNT"
 
@@ -256,9 +255,6 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
 
-    if not GPKG.exists():
-        sys.exit(f"GPKG not found: {GPKG}")
-
     extract = load_extract()
     fs_by_pid = {p["pid"]: p for p in extract["people"]}
     person_child_fs, ambiguous = build_lineage(extract)
@@ -276,7 +272,7 @@ def main() -> int:
         if r["fs_id"]:
             fs_to_pid[r["fs_id"]] = r["person_id"]
 
-    # GPKG Relationships: build parent->child as ground truth (overrides FS guess)
+    # relationship rows: build parent->child as ground truth (overrides FS guess)
     rel_parent_child = defaultdict(list)   # parent_pid -> [child_pid]
     for r in conn.execute(
         "SELECT person_id_a, person_id_b FROM relationship WHERE relation='parent'"
@@ -290,15 +286,15 @@ def main() -> int:
     def walk_down(start_pid: str, start_fs: str | None) -> tuple[str | None, list[str], str]:
         """Return (branch, path_of_person_ids, source).
 
-        source ∈ {"gpkg_self", "gpkg_rel", "fs_walk", "fallback_surname",
+        source ∈ {"db_self", "db_rel", "fs_walk", "fallback_surname",
                   "unknown"}
         """
         # Self
         b = pid_to_branch.get(start_pid)
         if b:
-            return b, [start_pid], "gpkg_self"
+            return b, [start_pid], "db_self"
 
-        # Walk via GPKG Relationships first (most reliable)
+        # Walk via relationship rows first (most reliable)
         visited = {start_pid}
         queue: list[tuple[str, list[str]]] = [(start_pid, [start_pid])]
         while queue:
@@ -309,7 +305,7 @@ def main() -> int:
                 visited.add(child)
                 bc = pid_to_branch.get(child)
                 if bc:
-                    return bc, path + [child], "gpkg_rel"
+                    return bc, path + [child], "db_rel"
                 queue.append((child, path + [child]))
 
         # Walk via FS extract child mapping
@@ -329,7 +325,7 @@ def main() -> int:
                     if bc:
                         return bc, path_fs, "fs_walk"
                 else:
-                    # Reach the proband or someone not in GPKG — note path
+                    # Reach the proband or someone not in Postgres — note path
                     path_fs.append(f"fs:{nxt_fs}")
                 cur_fs = nxt_fs
 
@@ -394,7 +390,7 @@ def main() -> int:
         "| source | count |",
         "|---|---:|",
     ]
-    for src in ("gpkg_self", "gpkg_rel", "fs_walk", "fallback_surname", "unknown"):
+    for src in ("db_self", "db_rel", "fs_walk", "fallback_surname", "unknown"):
         lines.append(f"| `{src}` | {by_source.get(src, 0)} |")
     lines += ["", "## By proposed branch", "", "| branch | count |", "|---|---:|"]
     for br, ct in sorted(by_branch.items(), key=lambda x: -x[1]):

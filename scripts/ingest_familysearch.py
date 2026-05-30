@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Ingest missing ancestors from a FamilySearch extract into the LRGDM GPKG.
+"""Ingest missing ancestors from a FamilySearch extract into the Postgres `lrgdm` database.
 
-Reads the newest src/data/familysearch/extract_*.json and adds People rows for
-every FS person whose `pid` doesn't already appear as a `fs_id` in the GPKG.
-Also adds new Places rows for any birth/death place that doesn't canonicalize
-to an existing Places.name.
+Reads the newest src/data/familysearch/extract_*.json and adds `person` rows for
+every FS person whose `pid` doesn't already appear as a `fs_id` in Postgres.
+Also adds new `place` rows for any birth/death place that doesn't canonicalize
+to an existing place.name.
 
 Two-step protocol:
   --dry-run (default) writes reports/ingest_proposal_<DATE>.{md,json}
-  --apply              writes the GPKG (and regenerates derived layers)
+  --apply              commit the new rows to Postgres
 
 Branch is set via a surname-based heuristic (see SURNAME_BRANCH_MAP). Anyone
 whose surname doesn't match falls through with branch=NULL — surfaced in the
@@ -29,7 +29,7 @@ from lrgdm_db import connect
 REPO = Path(__file__).resolve().parents[1]
 EXTRACT_DIR = REPO / "src/data/familysearch"
 
-# Surname -> branch. Matches existing GPKG conventions (which are inconsistent
+# Surname -> branch. Matches existing legacy conventions (which are inconsistent
 # but at least internally coherent — "Paternal Reed" is used as the label for
 # the Reed-family lineage even though that lineage is on John's maternal side).
 # When the FS surname matches multiple branches (e.g., multiple "Reed"s
@@ -141,7 +141,7 @@ def infer_place_quality(name: str) -> str:
     return "unknown"
 
 
-def next_id(conn: sqlite3.Connection, table: str, col: str, prefix: str, width: int = 4) -> int:
+def next_id(conn, table: str, col: str, prefix: str, width: int = 4) -> int:
     rows = list(conn.execute(f"SELECT {col} AS v FROM {table} WHERE {col} LIKE %s", (f"{prefix}%",)))
     nums = []
     for r in rows:
@@ -153,24 +153,6 @@ def next_id(conn: sqlite3.Connection, table: str, col: str, prefix: str, width: 
 
 def fmt_id(prefix: str, n: int, width: int = 4) -> str:
     return f"{prefix}{n:0{width}d}"
-
-
-def _capture_and_drop_triggers(cur: sqlite3.Cursor, tables: list[str]) -> list[tuple[str, str]]:
-    captured = []
-    for t in tables:
-        for n, s in cur.execute(
-            "SELECT name, sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?", (t,),
-        ):
-            captured.append((n, s))
-    for n, _ in captured:
-        cur.execute(f'DROP TRIGGER IF EXISTS "{n}"')
-    return captured
-
-
-def _recreate(cur, captured):
-    for _, sql in captured:
-        if sql:
-            cur.execute(sql)
 
 
 def load_extract() -> dict:
@@ -357,7 +339,7 @@ def main() -> int:
     print(f"Branch unknown (will be NULL): {len(branch_unknown)}")
 
     if not args.apply:
-        print("\n(dry-run) pass --apply to write to the GPKG.")
+        print("\n(dry-run) pass --apply to write to Postgres.")
         conn.close()
         return 0
 

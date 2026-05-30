@@ -12,11 +12,9 @@ have death info too).
 
 Two-step protocol:
   default              writes reports/auto_geocode_<DATE>.{md,json}
-  --apply              writes the GPKG (Places + People updates)
+  --apply              commit the place + person updates to Postgres
 
-Backs up GPKG to .pre-geocode.bak before --apply.
-
-No regenerate of derived layers — caller should run cleanup_model.py after.
+Derived map layers are live SQL views — no rebuild step.
 """
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply safe data-quality fixes to lrgdm.gpkg.
+"""Apply safe data-quality fixes to the Postgres `lrgdm` database.
 
 Default mode is --dry-run (print what WOULD change). Pass --apply to commit.
 
@@ -24,11 +24,6 @@ import re
 from psycopg.rows import tuple_row
 
 from lrgdm_db import connect
-import sys
-from pathlib import Path
-
-REPO = Path(__file__).resolve().parents[1]
-GPKG = REPO / "src/data/lrgdm.gpkg"
 
 # ---- geocode_quality inference --------------------------------------------
 # Tag the place by its MOST-SPECIFIC token (the first comma-separated part).
@@ -83,7 +78,7 @@ PATERNAL_REED_BACKFILL = {
 }
 
 
-def plan(conn: sqlite3.Connection) -> dict:
+def plan(conn) -> dict:
     """Return a dict describing what would change, without writing."""
     out: dict = {}
 

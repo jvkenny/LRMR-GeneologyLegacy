@@ -102,7 +102,7 @@ For each census the person should appear in based on lifespan:
 - Capture: enumeration date, ED #, page #, household composition (every
   person in the dwelling, with age and relation), occupation, property
   value, birthplace (theirs + parents' — the post-1880 censuses ask).
-- Cross-link with siblings/parents/spouse already in the GPKG. A census
+- Cross-link with siblings/parents/spouse already in the database. A census
   entry for a parent often resolves a child's birth-place.
 - **Neighbors matter.** Same-surname neighbors are often cousins. A
   brother-in-law two doors down explains a marriage. Record them as Open
@@ -207,11 +207,11 @@ context paragraph.
 
 ## Handling conflicts
 
-When a record disagrees with the GPKG (or with another record):
+When a record disagrees with the database (or with another record):
 
-1. **Record both.** The facts table has a `Conflicts with GPKG?` column —
-   set it to `yes` and list the conflicting GPKG fact.
-2. **Don't auto-patch over the GPKG value** with an `update_person` op.
+1. **Record both.** The facts table has a `Conflicts?` column —
+   set it to `yes` and list the conflicting database fact.
+2. **Don't auto-patch over the database value** with an `update_person` op.
    Surface the conflict in the narrative and let John decide.
 3. **Resolution rules of thumb** (apply judgment):
    - Class 1 source overrides class 4-7 every time.
@@ -267,6 +267,6 @@ Instead:
   picks them up.
 
 The exception: a **direct parent** of the subject that's missing from the
-GPKG and is confirmed by a class-1 source can get an `insert_event`
+database and is confirmed by a class-1 source can get an `insert_event`
 ("birth event for subject names parent X") *plus* an Open Lead to add the
 parent properly. Don't create the parent's People row from a deep dive.

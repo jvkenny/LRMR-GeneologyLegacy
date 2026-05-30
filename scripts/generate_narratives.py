@@ -17,7 +17,6 @@ Run from repo root:
 import html
 import json
 import re
-import sqlite3
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +25,6 @@ ROOT = Path(__file__).resolve().parent.parent
 DOSSIER_DIR = ROOT / "reports" / "deep-dives"
 OUT_DIR = ROOT / "docs" / "narratives"
 INDEX_PATH = ROOT / "docs" / "data" / "narratives_index.json"
-GPKG_PATH = ROOT / "src" / "data" / "lrgdm.gpkg"
 
 FRONTMATTER_RE = re.compile(r"^---\s*$(.*?)^---\s*$", re.MULTILINE | re.DOTALL)
 SECTION_RE = re.compile(r"^## (\d+)\. ", re.MULTILINE)
@@ -108,7 +106,7 @@ def render_citations(escaped_text):
     return text
 
 
-def gpkg_life_dates(person_id):
+def person_life_dates(person_id):
     # Source of truth is Postgres (db lrgdm); $LRGDM_PG overrides the conninfo.
     import os
     import psycopg
@@ -339,7 +337,7 @@ def main():
             print(f"  ! {path.name}: empty narrative — skipping", file=sys.stderr)
             continue
         pid = fm.get("person_id", path.stem)
-        page = render_page(fm, facts, paragraphs, gpkg_life_dates(pid))
+        page = render_page(fm, facts, paragraphs, person_life_dates(pid))
         (OUT_DIR / f"{pid}.html").write_text(page)
         index[pid] = {
             "url": f"narratives/{pid}.html",

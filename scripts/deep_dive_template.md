@@ -3,8 +3,10 @@ Deep Dive Dossier — TEMPLATE
 
 Copy this file to reports/deep-dives/<person_id>.md and fill in the
 sections. The lrgdm-deep-dive skill consumes the same structure;
-apply_deep_dive.py parses the "Proposed GeoPackage patches" fenced
-JSON blocks. Don't rename headings — the apply script is heading-aware.
+apply_deep_dive.py parses the fenced `json deep-dive-patch` JSON blocks
+(it keys on the code fences, not on section headings). parse_dossiers.py
+keys on the section numbers (## 3., ## 5., ## 6.) and on table column
+position — don't renumber sections or reorder the §3 facts-table columns.
 
 Replace every <bracketed placeholder>. Delete (or keep empty under a
 header) any section that doesn't apply, but don't reorder.
@@ -12,7 +14,7 @@ header) any section that doesn't apply, but don't reorder.
 
 ---
 person_id: P-XXXX
-primary_name: <Full name as in GPKG>
+primary_name: <Full name as in the database>
 fs_id: <L274-XXX or NULL>
 dossier_date: 2026-XX-XX
 deepest_ring_reached: <0..6>
@@ -21,9 +23,9 @@ researcher: lrgdm-deep-dive skill
 
 # Deep Dive — <Primary name> (P-XXXX)
 
-## 1. Person context (GPKG snapshot at dive start)
+## 1. Person context (database snapshot at dive start)
 
-> The state of the GPKG row BEFORE this deep dive. Don't edit this
+> The state of the database row BEFORE this deep dive. Don't edit this
 > section after Phase 1; the dossier is meant to be diffable against
 > truth-at-dive-time.
 
@@ -74,13 +76,13 @@ researcher: lrgdm-deep-dive skill
 ## 3. Facts table
 
 > Every fact discovered in Phase 2. Tag confidence per the runbook
-> rubric. The `Conflicts with GPKG?` column is `yes` / `no` / `n/a`
-> (n/a when the GPKG had no value for that fact yet).
+> rubric. The `Conflicts?` column is `yes` / `no` / `n/a`
+> (n/a when the database had no value for that fact yet).
 
-| # | Fact | Source | URL | Confidence | Conflicts with GPKG? |
+| # | Fact | Source | URL | Confidence | Conflicts? |
 |---|---|---|---|---|---|
 | 1 | <e.g. "Born 3 Jun 1816 in Smyrna, Kent County, Delaware"> | <e.g. "Delaware vital records index, entry 1816-1027"> | <https://...> | high | no |
-| 2 | <fact> | <source> | <url> | med | yes (GPKG says "circa 1822", record says 1820-04-12) |
+| 2 | <fact> | <source> | <url> | med | yes (db says "circa 1822", record says 1820-04-12) |
 
 Tally:
 - High-confidence facts: <N>
@@ -88,13 +90,13 @@ Tally:
 - Low: <N>
 - Conflicts flagged: <N>
 
-## 4. Proposed GeoPackage patches
+## 4. Proposed database patches
 
 > Structured JSON blocks. `apply_deep_dive.py` reads every fenced block
 > tagged `json deep-dive-patch`. Schema is documented in the
 > [lrgdm-deep-dive SKILL](../../.claude/skills/lrgdm-deep-dive/SKILL.md).
 > Do NOT propose patches for conflict rows from §3 unless the new fact
-> is `high` confidence AND the GPKG value is `low`/inferred — otherwise
+> is `high` confidence AND the database value is `low`/inferred — otherwise
 > leave the conflict for John.
 
 ### 4.1 Place upserts
@@ -119,7 +121,7 @@ Tally:
 ```
 
 (Repeat one block per place upsert. Use `PL-DD-<personid>-NNN` IDs to
-avoid colliding with the GPKG's normal `PL-####` sequence — the apply
+avoid colliding with the database's normal `PL-####` sequence — the apply
 script renumbers to the next free `PL-####` at write time.)
 
 ### 4.2 New events
@@ -176,14 +178,14 @@ The `fact_refs` array points back to row numbers in §3 so the apply script
 `*_append` fields are additive — the apply script joins them to the
 existing value with a separator (`\n` for `notes_append`, `; ` for
 `source_summary_append`). Use `set` for direct replacements; only do
-that when the GPKG value was NULL or this dossier's facts table marks
+that when the database value was NULL or this dossier's facts table marks
 the conflict resolution explicitly.
 
 Permitted keys in `set`:
 - `fs_id` (TEXT)
 - `birth_date`, `death_date` (TEXT — ISO 8601 preferred)
 - `birth_place_ref`, `death_place_ref` (object with `name` matching a
-  Place in the GPKG or a sibling `upsert_place` op in this dossier;
+  Place in the database or a sibling `upsert_place` op in this dossier;
   use `null` to clear)
 - `branch` (TEXT)
 - `life_confidence` (`high|med|low`)

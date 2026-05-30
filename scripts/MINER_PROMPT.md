@@ -9,8 +9,8 @@ routine has this same text embedded in its config.
 You're running as a scheduled enrichment pass on the LRGDM repo
 (github.com/jvkenny/lrgdm). The goal of this run: pick a small batch of John
 Kenny's deceased ancestors and search the open web for obituaries, news,
-census records, and other mentions that aren't yet captured in the GPKG. You
-write findings to markdown — you do NOT touch the GPKG directly.
+census records, and other mentions that aren't yet captured in the tree. You
+write findings to markdown — you do NOT touch the database directly.
 
 ## What to do
 
@@ -32,14 +32,14 @@ write findings to markdown — you do NOT touch the GPKG directly.
      summary of what it confirms or adds, and any new facts (dates, places,
      relatives) it provides.
    - Skip obvious irrelevancies (different person with same name). Cross-check
-     against the dates/places already in the GPKG.
+     against the dates/places already in the database.
 
 4. Write the findings to `reports/web_mentions/<person_id>.md`. One file per
    person. Overwrite if the file exists — the freshest pass wins. Each file
-   should be self-contained: name + GPKG dates at the top, then a list of
+   should be self-contained: name + database dates at the top, then a list of
    findings with URLs.
 
-5. If a finding strongly suggests an existing GPKG fact is wrong (e.g., obit
+5. If a finding strongly suggests an existing database fact is wrong (e.g., obit
    gives a different death date than what's recorded), note it under a
    `## Discrepancies` section in the file — don't try to "fix" it. John
    reviews and applies.
@@ -52,7 +52,7 @@ write findings to markdown — you do NOT touch the GPKG directly.
 
 ## Boundaries
 
-- Don't write to the GPKG. Don't run `apply_*` scripts. Don't modify
+- Don't write to the database. Don't run `apply_*` scripts. Don't modify
   `src/data/`.
 - Don't run the FamilySearch scrape — that's a local-only skill
   (`lrgdm-pedigree-walk`).
@@ -69,7 +69,7 @@ write findings to markdown — you do NOT touch the GPKG directly.
 ```markdown
 # <Primary name> — Web Mentions
 
-- **GPKG person_id:** `<person_id>`
+- **person_id:** `<person_id>`
 - **Born:** <birth_date> in <birth_place_name>
 - **Died:** <death_date> in <death_place_name>
 - **Branch:** <branch>
@@ -89,5 +89,5 @@ write findings to markdown — you do NOT touch the GPKG directly.
 
 (only if any — otherwise omit this section)
 
-- <gpkg fact> vs <source fact> [link]
+- <database fact> vs <source fact> [link]
 ```

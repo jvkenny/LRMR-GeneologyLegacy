@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Match GPKG People rows against a FamilySearch extract and propose fs_id values.
+"""Match `person` rows in the Postgres `lrgdm` db against a FamilySearch extract and propose fs_id values.
+
+Reads `person` rows WHERE fs_id IS NULL from Postgres.
 
 Input:  src/data/familysearch/extract_<PROBAND>_<DATE>.json
-        src/data/lrgdm.gpkg
 Output: reports/fs_reconciliation_<DATE>.md   (human-reviewable)
         reports/fs_reconciliation_<DATE>.json (machine-applyable, includes
                                                proposed UPDATE statements)
@@ -216,7 +217,7 @@ def main() -> int:
         f"- Unlinked People rows reviewed: **{len(unlinked)}**",
         f"- Minimum match score: {args.min_score}",
         "",
-        "Each block lists up to 3 candidate FS persons per unlinked GPKG row, sorted by score.",
+        "Each block lists up to 3 candidate FS persons per unlinked person row, sorted by score.",
         "Score is `0.6 * name_similarity + 0.4 * date_proximity` on a 0-1 scale.",
         "",
         "## Proposals",
@@ -224,7 +225,7 @@ def main() -> int:
     ]
     for r in results:
         lines.append(f"### {r['person_id']} — {r['primary_name']}")
-        lines.append(f"GPKG birth: `{r['birth_date']}`  •  death: `{r['death_date']}`  •  branch: `{r['branch']}`")
+        lines.append(f"DB birth: `{r['birth_date']}`  •  death: `{r['death_date']}`  •  branch: `{r['branch']}`")
         lines.append("")
         if not r["candidates"]:
             lines.append("_No candidates above threshold._")
