@@ -32,14 +32,15 @@
       --radius-sm: 10px;
       --tap: 44px;
 
-      --era-colonial:           #5cb85c;
-      --era-early-republic:     #d9534f;
-      --era-civil-war:          #5bc0de;
-      --era-gilded:             #f0ad4e;
-      --era-progressive:        #337ab7;
-      --era-roaring:            #8e44ad;
-      --era-modern:             #1a8a5a;
-      --era-default:            #3742fa;
+      /* Chronological ramp: hue encodes time (deep indigo = oldest → warm red = newest). */
+      --era-colonial:           #5B3FA0;
+      --era-early-republic:     #2C5BA8;
+      --era-civil-war:          #1C8C9C;
+      --era-gilded:             #2BA15E;
+      --era-progressive:        #C9A227;
+      --era-roaring:            #E07A1F;
+      --era-modern:             #D6402C;
+      --era-default:            #6b6b80;
 
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
@@ -891,7 +892,7 @@
     <input type="range" id="yearSlider" min="1735" max="1936" value="1850" aria-label="Select year" />
     <div>
       <div class="year-label" id="yearLabel">1850</div>
-      <div class="year-sub">alive in year</div>
+      <div class="year-sub">family by year</div>
     </div>
     <button class="scrubber-toggle" id="scrubberToggle" aria-label="Hide time slider" title="Hide">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1058,13 +1059,13 @@
 const DATA = "data/";
 
 const ERA_COLORS = {
-  "Colonial Era":                    getComputedStyle(document.documentElement).getPropertyValue("--era-colonial").trim()           || "#5cb85c",
-  "Early Republic":                  getComputedStyle(document.documentElement).getPropertyValue("--era-early-republic").trim()     || "#d9534f",
-  "Civil War & Reconstruction":      getComputedStyle(document.documentElement).getPropertyValue("--era-civil-war").trim()          || "#5bc0de",
-  "Gilded Age":                      getComputedStyle(document.documentElement).getPropertyValue("--era-gilded").trim()             || "#f0ad4e",
-  "Progressive Era & WWI":           getComputedStyle(document.documentElement).getPropertyValue("--era-progressive").trim()        || "#337ab7",
-  "Roaring 20s & Great Depression":  getComputedStyle(document.documentElement).getPropertyValue("--era-roaring").trim()            || "#8e44ad",
-  "Modern":                          getComputedStyle(document.documentElement).getPropertyValue("--era-modern").trim()             || "#1a8a5a",
+  "Colonial Era":                    getComputedStyle(document.documentElement).getPropertyValue("--era-colonial").trim()           || "#5B3FA0",
+  "Early Republic":                  getComputedStyle(document.documentElement).getPropertyValue("--era-early-republic").trim()     || "#2C5BA8",
+  "Civil War & Reconstruction":      getComputedStyle(document.documentElement).getPropertyValue("--era-civil-war").trim()          || "#1C8C9C",
+  "Gilded Age":                      getComputedStyle(document.documentElement).getPropertyValue("--era-gilded").trim()             || "#2BA15E",
+  "Progressive Era & WWI":           getComputedStyle(document.documentElement).getPropertyValue("--era-progressive").trim()        || "#C9A227",
+  "Roaring 20s & Great Depression":  getComputedStyle(document.documentElement).getPropertyValue("--era-roaring").trim()            || "#E07A1F",
+  "Modern":                          getComputedStyle(document.documentElement).getPropertyValue("--era-modern").trim()             || "#D6402C",
 };
 
 const ERA_ORDER = [
@@ -1159,6 +1160,11 @@ function detectRegions(people) {
   // Preserve REGION_LABELS order
   return Object.keys(REGION_LABELS).filter(r => found.has(r));
 }
+
+// Geocode-precision levels too generic to pin: a point that only resolves to a
+// whole country / large region centroid (e.g. a birthplace recorded as "France")
+// is a misleading blob, so we suppress the dot. The migration arc still draws.
+const COARSE_GEOCODE = new Set(["region"]);
 
 const MODES = {
   all:       { births: true, deaths: true, lines: true,  events: false, people: false, places: false },
@@ -1475,6 +1481,12 @@ function styleForEra(props, base) {
 
 function makePointLayer(geojson, kind) {
   const layer = L.geoJSON(geojson, {
+    filter: f => {
+      // Drop generic country/region-centroid points; the arc (lines layer) is
+      // unaffected, so transatlantic immigrants still show their journey.
+      const q = state.placeQuality && state.placeQuality[(f.properties || {}).place_id];
+      return !COARSE_GEOCODE.has(q);
+    },
     pointToLayer: (f, latlng) => {
       const r = pointRadius();
       const m = L.circleMarker(latlng, {
@@ -1503,18 +1515,49 @@ function makePointLayer(geojson, kind) {
   return layer;
 }
 
+// Bow a straight A→B segment into a quadratic-bézier arc (flight-path look).
+// Control point is offset perpendicular to the chord by `bow`, sampled to `n`
+// points. Math mirrors the QGIS geometry-generator so the web map and the
+// print map read identically. Coords are returned as Leaflet [lat, lng].
+function bezierArc(lat1, lng1, lat2, lng2, bow = 0.18, n = 24) {
+  const dLat = lat2 - lat1, dLng = lng2 - lng1;
+  const mLat = (lat1 + lat2) / 2, mLng = (lng1 + lng2) / 2;
+  const cLng = mLng - dLat * bow;   // perpendicular = (-dLat, dLng)
+  const cLat = mLat + dLng * bow;
+  const out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, u = 1 - t;
+    out.push([
+      u * u * lat1 + 2 * u * t * cLat + t * t * lat2,
+      u * u * lng1 + 2 * u * t * cLng + t * t * lng2,
+    ]);
+  }
+  return out;
+}
+
 function makeLineLayer(geojson) {
-  return L.geoJSON(geojson, {
-    pane: "familyPins",
-    style: f => {
-      const c = eraColor(f.properties && f.properties.era);
-      return { color: c, weight: 2.6, opacity: 0.85, className: "line-draw" };
-    },
-    onEachFeature: (f, l) => {
-      const p = f.properties || {};
-      l.bindPopup(() => popupHtml(p, "line"), { autoPan: true, maxWidth: 320 });
-    },
+  const group = L.featureGroup();
+  (geojson.features || []).forEach(f => {
+    const g = f.geometry;
+    if (!g || g.type !== "LineString" || !g.coordinates || g.coordinates.length < 2) return;
+    const [lng1, lat1] = g.coordinates[0];
+    const [lng2, lat2] = g.coordinates[g.coordinates.length - 1];
+    const props = f.properties || {};
+    const poly = L.polyline(bezierArc(lat1, lng1, lat2, lng2), {
+      pane: "familyPins",
+      color: eraColor(props.era),
+      weight: 1.4,
+      opacity: 0.55,
+      lineCap: "round",
+      lineJoin: "round",
+      className: "arc",
+    });
+    poly.feature = f;        // keep GeoJSON feature for filters/popups
+    poly._props = props;
+    poly.bindPopup(() => popupHtml(props, "line"), { autoPan: true, maxWidth: 320 });
+    group.addLayer(poly);
   });
+  return group;
 }
 
 function makeEventLayer(geojson) {
@@ -1545,22 +1588,71 @@ function applyFilters() {
     if (!visible && map.hasLayer(layer)) map.removeLayer(layer);
   });
 
-  // Per-feature era + alive-at-year filter
-  ["births", "deaths", "lines"].forEach(key => {
-    const layer = state.layers[key];
-    if (!layer) return;
+  // Per-feature era + accumulate-by-year reveal.
+  applyTimeVisual();
+}
+
+// How many years a feature takes to fade/draw in once its year is reached.
+const FADE_YEARS = 4;
+
+// Accumulate model: a feature appears at its key year (birth for births/lines,
+// death for deaths), fades + draws on over FADE_YEARS, then persists. Era
+// filtering hides features whose era pill is off. Driven both by slider
+// scrubbing and by the rAF play loop; writes to the SVG path only when a
+// feature's state changes materially, so a play frame is O(changed), not O(all).
+function applyTimeVisual() {
+  const year = (state.yearF != null) ? state.yearF : state.year;  // fractional during playback
+  const groups = [
+    [state.layers.births, "birth_year", 0.90, false],
+    [state.layers.deaths, "death_year", 0.85, false],
+    [state.layers.lines,  "birth_year", 0.58, true],
+  ];
+  for (const [layer, field, target, isLine] of groups) {
+    if (!layer) continue;
     layer.eachLayer(sub => {
-      const props = sub.feature && sub.feature.properties || sub._props || {};
-      const era = props.era;
-      const eraOk = !era || state.activeEras.has(era);
-      const yearOk = aliveAtYear(props, state.year);
       const path = sub._path;
       if (!path) return;
-      path.classList.remove("feature-hidden", "feature-dim");
-      if (!eraOk) path.classList.add("feature-hidden");
-      else if (!yearOk) path.classList.add("feature-dim");
+      const props = (sub.feature && sub.feature.properties) || sub._props || {};
+      const era = props.era;
+      if (era && !state.activeEras.has(era)) {
+        if (path._st !== "hidden") {
+          path.style.opacity = "0";
+          path.style.pointerEvents = "none";
+          path._st = "hidden";
+        }
+        return;
+      }
+      const yv = props[field];
+      const prog = (yv == null) ? 1 : (year < yv ? 0 : Math.min(1, (year - yv) / FADE_YEARS));
+      if (prog <= 0) {
+        if (path._st !== "off") {
+          path.style.opacity = "0";
+          path.style.pointerEvents = "none";
+          path._st = "off";
+        }
+        return;
+      }
+      if (path._st !== "on" || path._prog === undefined || Math.abs(path._prog - prog) > 0.02) {
+        path.style.pointerEvents = "";
+        if (isLine) {
+          if (!path._normSet) {
+            // Normalize the path to unit length so the draw-on dash is measured in
+            // FRACTIONS of the arc, not pixels. getTotalLength() goes stale on zoom
+            // (and during the load fly-to), which left gaps mid-arc on long lines.
+            path.setAttribute("pathLength", "1");
+            path.style.strokeDasharray = "1 1";  // 1 unit drawn, 1 unit gap (no repeat)
+            path._normSet = true;
+          }
+          path.style.strokeDashoffset = (1 - prog);  // draw origin→destination
+          path.style.opacity = target * (0.45 + 0.55 * prog);
+        } else {
+          path.style.opacity = target * prog;
+        }
+        path._prog = prog;
+        path._st = "on";
+      }
     });
-  });
+  }
 }
 
 // ---------------------- UI building ----------------------
@@ -1810,41 +1902,61 @@ function wireScrubber() {
   // Expose so the tour can auto-collapse on open
   window._collapseScrubber = setCollapsed;
 
-  function setYear(y) {
-    state.year = y;
+  function paintYear(y) {
     label.textContent = y;
+    slider.value = y;
     const pct = ((y - +slider.min) / (+slider.max - +slider.min)) * 100;
     slider.style.setProperty("--pct", pct + "%");
+  }
+  function setYear(y) {
+    state.year = y;
+    state.yearF = y;
+    paintYear(y);
     applyFilters();
   }
   function setRange(min, max) {
     slider.min = min; slider.max = max;
-    if (state.year < min || state.year > max) {
-      setYear(Math.round((min + max) / 2));
-    } else {
-      slider.value = state.year;
-      setYear(state.year);
-    }
+    if (state.year < min || state.year > max) setYear(max);  // open on the full, accumulated picture
+    else { slider.value = state.year; setYear(state.year); }
   }
 
   slider.addEventListener("input", e => setYear(+e.target.value));
 
-  function tick() {
+  // Smooth playback: advance a fractional year via requestAnimationFrame so the
+  // arcs draw on and the family accumulates fluidly (vs. the old discrete steps).
+  const PLAY_SPEED = 16;   // years per second
+  let rafId = null, lastT = null;
+  function frame(ts) {
     if (!state.isPlaying) return;
-    const next = state.year + 3;
-    if (next > +slider.max) { stop(); return; }
-    slider.value = next;
-    setYear(next);
+    if (lastT == null) lastT = ts;
+    const dt = (ts - lastT) / 1000; lastT = ts;
+    const max = +slider.max;
+    let yf = (state.yearF != null ? state.yearF : state.year) + dt * PLAY_SPEED;
+    if (yf >= max) {
+      state.yearF = max; state.year = max; paintYear(max); applyTimeVisual();
+      stop(); return;
+    }
+    state.yearF = yf;
+    const yi = Math.round(yf);
+    if (yi !== state.year) { state.year = yi; paintYear(yi); }
+    applyTimeVisual();
+    rafId = requestAnimationFrame(frame);
   }
   function start() {
     state.isPlaying = true;
     icon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
-    state.playTimer = setInterval(tick, 350);
+    lastT = null;
+    if ((state.yearF != null ? state.yearF : state.year) >= +slider.max) {
+      // At the end → rewind and replay the accumulation from the beginning.
+      state.yearF = +slider.min; state.year = +slider.min; paintYear(+slider.min); applyTimeVisual();
+    }
+    rafId = requestAnimationFrame(frame);
   }
   function stop() {
     state.isPlaying = false;
     icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    clearInterval(state.playTimer);
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
   }
   play.addEventListener("click", () => state.isPlaying ? stop() : start());
 
@@ -2479,6 +2591,13 @@ async function boot() {
     buildStats();
 
     state.geoJson = { lines, births, deaths, people, events, places };
+
+    // place_id -> geocode precision, used to suppress generic country/region points.
+    state.placeQuality = {};
+    (places.features || []).forEach(f => {
+      const p = f.properties || {};
+      if (p.place_id) state.placeQuality[p.place_id] = p.geocode_quality;
+    });
 
     state.layers.lines  = makeLineLayer(lines);
     state.layers.births = makePointLayer(births, "birth");
